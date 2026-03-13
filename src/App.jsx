@@ -1448,29 +1448,26 @@ export default function App() {
     if (!supaCfg) return;
     let imgUrl = wine.img;
 
-    // Se a imagem mudou e é base64, faz upload para Storage
     if (wine.img && wine.img.startsWith("data:")) {
       const uploaded = await supaUploadImage(wine.img, wine.id, supaCfg);
-      if (uploaded) {
-        imgUrl = uploaded;
-        removeImgLocal(wine.id);
-      } else {
-        saveImgLocal(wine.id, wine.img);
-      }
+      if (uploaded) { imgUrl = uploaded; removeImgLocal(wine.id); }
+      else saveImgLocal(wine.id, wine.img);
     } else if (!wine.img) {
       removeImgLocal(wine.id);
     }
 
+    // NUNCA enviar o campo 'id' no body do PATCH — Supabase rejeita
+    const { id, ...rest } = wine;
     const w = {
-      id: wine.id, name: wine.name, origin: wine.origin || "", region: wine.region || "",
-      year: wine.year ? +wine.year : null, cost_price: +wine.costPrice || 0,
-      price: +wine.price, promo_price: wine.promoPrice ? +wine.promoPrice : null,
-      stock: +wine.stock || 0, category: wine.category || "Tinto",
-      alcohol: wine.alcohol || "", grapes: wine.grapes || "",
-      description: wine.description || "", keywords: wine.keywords || "",
-      harmonization: wine.harmonization || "", img: imgUrl || null,
+      name: rest.name, origin: rest.origin || "", region: rest.region || "",
+      year: rest.year ? +rest.year : null, cost_price: +rest.costPrice || 0,
+      price: +rest.price, promo_price: rest.promoPrice ? +rest.promoPrice : null,
+      stock: +rest.stock || 0, category: rest.category || "Tinto",
+      alcohol: rest.alcohol || "", grapes: rest.grapes || "",
+      description: rest.description || "", keywords: rest.keywords || "",
+      harmonization: rest.harmonization || "", img: imgUrl || null,
     };
-    await supa.wines.update(w, supaCfg);
+    await supaFetch("wines", "PATCH", w, `id=eq.${id}`, supaCfg);
   };
   const dbDeleteWine = async (id) => {
     removeImgLocal(id);
@@ -1662,10 +1659,14 @@ export default function App() {
   };
   const handleSaveEdit = async () => {
     const updated = { ...editWine, price: +editWine.price, costPrice: +editWine.costPrice || 0, promoPrice: editWine.promoPrice ? +editWine.promoPrice : null, stock: +editWine.stock, year: +editWine.year };
+    showToast("Salvando…");
     await dbUpdateWine(updated);
     setWines((p) => p.map((w) => w.id === updated.id ? updated : w));
     if (selectedWine?.id === updated.id) setSelectedWine(updated);
-    setEditWine(null); showToast("Vinho atualizado!");
+    setEditWine(null);
+    showToast("Vinho atualizado! ✅");
+    // Recarrega do banco para confirmar que foi salvo
+    if (supaCfg) setTimeout(() => loadFromSupabase(supaCfg), 1000);
   };
   const handleDeleteWine = async (id) => { await dbDeleteWine(id); setWines((p) => p.filter((w) => w.id !== id)); showToast("Vinho removido.", "error"); };
 
@@ -1847,6 +1848,7 @@ export default function App() {
           .tbl{font-size:11px!important}
           .tbl td,.tbl th{padding:7px 8px!important}
           .detail-flex{flex-direction:column!important}
+          .detail-img{width:100%!important;flexShrink:unset!important}
           .cart-panel{width:100%!important}
           .promo-banner{flex-direction:column!important;gap:12px!important}
         }
@@ -2125,8 +2127,8 @@ export default function App() {
             </div>
             <button onClick={() => setSelectedWine(null)} style={{ background: "none", border: "none", color: "#8b6060", cursor: "pointer", fontSize: 12, letterSpacing: 1, marginBottom: 26, display: "flex", alignItems: "center", gap: 6, fontFamily: "Georgia,serif" }}>← Voltar ao catálogo</button>
             <div className="detail-flex" style={{ display: "flex", gap: 44, alignItems: "flex-start" }}>
-              {/* Imagem 1:1 */}
-              <div style={{ width: 340, flexShrink: 0, aspectRatio: "1/1", borderRadius: 14, overflow: "hidden", border: "1px solid #2a1f1f", position: "relative", cursor: "zoom-in" }} onClick={() => setZoomWine(selectedWine)}>
+              {/* Imagem — grande no desktop, full width no mobile */}
+              <div className="detail-img" style={{ width: 480, flexShrink: 0, aspectRatio: "1/1", borderRadius: 14, overflow: "hidden", border: "1px solid #2a1f1f", position: "relative", cursor: "zoom-in" }} onClick={() => setZoomWine(selectedWine)}>
                 <WineThumb wine={selectedWine} height="100%" />
                 {selectedWine.promoPrice && (
                   <div style={{ position: "absolute", top: 14, left: 14, background: "#b45309", color: "#fef3c7", fontSize: 13, padding: "5px 12px", borderRadius: 6, fontWeight: "bold", letterSpacing: 1 }}>
