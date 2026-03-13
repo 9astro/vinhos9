@@ -2101,20 +2101,26 @@ export default function App() {
           const vals = line.match(/(".*?"|[^,]+)/g) || [];
           const obj = {};
           headers.forEach((h, i) => { obj[h] = (vals[i] || "").replace(/^"|"$/g,"").trim(); });
+          // Aceita nomes alternativos de campos
+          const description = obj.description || obj.desc || obj.descricao || obj.about || "";
+          const harmonization = obj.harmonization || obj.harmonização || obj.foodPairing || obj.food_pairing || obj.harmonizacao || obj.pairing || "";
+          const keywords = obj.keywords || obj.palavrasChave || obj.tags || obj.seo || "";
+          const costPrice = +(obj.costPrice || obj.cost_price || obj.custo || 0);
+          const promoPrice = obj.promoPrice || obj.promo_price || obj.promocao || "";
           return {
             ...obj,
-            price: +obj.price || 0,
-            costPrice: +obj.costPrice || 0,
-            promoPrice: obj.promoPrice && +obj.promoPrice > 0 ? +obj.promoPrice : null,
-            stock: +obj.stock || 0,
-            year: +obj.year || "",
-            rating: +obj.rating || 4.5,
-            sales: +obj.sales || 0,
+            price: +obj.price || +obj.preco || 0,
+            costPrice,
+            promoPrice: promoPrice && +promoPrice > 0 ? +promoPrice : null,
+            stock: +obj.stock || +obj.estoque || 0,
+            year: +obj.year || +obj.ano || "",
+            rating: +obj.rating || +obj.nota || 4.5,
+            sales: +obj.sales || +obj.vendas || 0,
             img: null,
-            category: obj.category || "Tinto",
-            description: obj.description || "",
-            keywords: obj.keywords || "",
-            harmonization: obj.harmonization || "",
+            category: obj.category || obj.categoria || "Tinto",
+            description,
+            keywords,
+            harmonization,
           };
         }).filter(w => w.name && w.price > 0);
 
