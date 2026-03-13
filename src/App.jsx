@@ -26,14 +26,55 @@ const supaFetch = async (table, method = "GET", body = null, filter = "", cfg = 
     if (!text || text === "null") return method === "DELETE" ? true : [];
     return JSON.parse(text);
   } catch (e) {
-    // CORS no Claude.ai — vai funcionar quando publicado no Vercel/Netlify
     if (e.message?.includes("Failed to fetch") || e.message?.includes("CORS") || e.name === "TypeError") {
-      console.info("Supabase: bloqueado por CORS no ambiente atual. Funcionará após publicar o site.");
       return "cors_blocked";
     }
     console.warn("Supabase fetch error:", e);
     return null;
   }
+};
+
+// Upload de imagem para o Supabase Storage (bucket "wines")
+const supaUploadImage = async (base64, wineId, cfg) => {
+  const c = cfg || getSupaCfg();
+  if (!c?.url || !c?.key || !base64) return null;
+  try {
+    // Converte base64 para Blob
+    const [meta, data] = base64.split(",");
+    const mime = meta.match(/:(.*?);/)?.[1] || "image/jpeg";
+    const ext = mime.split("/")[1] || "jpg";
+    const bytes = atob(data);
+    const arr = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+    const blob = new Blob([arr], { type: mime });
+    const fileName = `wine_${wineId}_${Date.now()}.${ext}`;
+    const uploadUrl = `${c.url}/storage/v1/object/wines/${fileName}`;
+    const res = await fetch(uploadUrl, {
+      method: "POST",
+      headers: { "apikey": c.key, "Authorization": `Bearer ${c.key}`, "Content-Type": mime, "x-upsert": "true" },
+      body: blob,
+    });
+    if (!res.ok) { console.warn("Storage upload error:", res.status, await res.text()); return null; }
+    // Retorna URL pública
+    return `${c.url}/storage/v1/object/public/wines/${fileName}`;
+  } catch (e) {
+    console.warn("Storage upload exception:", e);
+    return null;
+  }
+};
+
+// Remove imagem do Supabase Storage
+const supaDeleteImage = async (imgUrl, cfg) => {
+  const c = cfg || getSupaCfg();
+  if (!c?.url || !c?.key || !imgUrl) return;
+  try {
+    const path = imgUrl.split("/storage/v1/object/public/wines/")[1];
+    if (!path) return;
+    await fetch(`${c.url}/storage/v1/object/wines/${path}`, {
+      method: "DELETE",
+      headers: { "apikey": c.key, "Authorization": `Bearer ${c.key}` },
+    });
+  } catch {}
 };
 
 // Helpers por tabela
@@ -1089,7 +1130,25 @@ create policy "public insert reviews" on reviews   for insert with check (true);
 create policy "public read reviews"   on reviews   for select using (true);
 create policy "public update reviews" on reviews   for update using (true);
 create policy "public delete reviews" on reviews   for delete using (true);`;
+
+  const SQL_STORAGE = `-- Cole no SQL Editor do Supabase para criar o bucket de imagens:
+insert into storage.buckets (id, name, public)
+values ('wines', 'wines', true)
+on conflict (id) do nothing;
+
+create policy "public upload wines storage"
+on storage.objects for insert
+with check (bucket_id = 'wines');
+
+create policy "public read wines storage"
+on storage.objects for select
+using (bucket_id = 'wines');
+
+create policy "public delete wines storage"
+on storage.objects for delete
+using (bucket_id = 'wines');`;
   const copySQL = () => { navigator.clipboard?.writeText(SQL_SCHEMA); showToast("SQL copiado! Cole no Editor SQL do Supabase."); };
+  const copyStorageSQL = () => { navigator.clipboard?.writeText(SQL_STORAGE); showToast("SQL do Storage copiado!"); };
   const card = { background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, padding: 22, marginBottom: 18 };
   const inputStyle = { width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "10px 12px", color: "#f5f0e8", fontSize: 12, fontFamily: "monospace" };
   return (
@@ -1111,6 +1170,16 @@ create policy "public delete reviews" on reviews   for delete using (true);`;
           {SQL_SCHEMA.split("\n").slice(0, 8).join("\n")}<span style={{ color: "#2a2a2a" }}>{"\n"}…</span>
         </div>
         <button onClick={copySQL} style={{ padding: "8px 18px", background: "#1a1410", border: "1px solid #3a2f2f", color: "#e8b4b4", borderRadius: 4, cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif" }}>📋 Copiar SQL completo</button>
+      </div>
+      <div style={card}>
+        <div style={{ fontSize: 11, letterSpacing: 2, color: "#a09080", textTransform: "uppercase", marginBottom: 12 }}>Passo 1b — Criar bucket de imagens (Storage)</div>
+        <p style={{ fontSize: 12, color: "#7a6a6a", lineHeight: 1.7, marginBottom: 12 }}>
+          Necessário para salvar fotos dos vinhos. Cole no <strong style={{ color: "#e8b4b4" }}>SQL Editor</strong> e clique <strong style={{ color: "#e8b4b4" }}>Run</strong>.
+        </p>
+        <div style={{ background: "#0c0a09", borderRadius: 6, padding: "10px 14px", fontSize: 10, color: "#4a4a4a", fontFamily: "monospace", maxHeight: 100, overflowY: "auto", marginBottom: 12, lineHeight: 1.6 }}>
+          {SQL_STORAGE.split("\n").slice(0, 5).join("\n")}<span style={{ color: "#2a2a2a" }}>{"\n"}…</span>
+        </div>
+        <button onClick={copyStorageSQL} style={{ padding: "8px 18px", background: "#1a1410", border: "1px solid #3a2f2f", color: "#e8b4b4", borderRadius: 4, cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif" }}>🖼 Copiar SQL do Storage</button>
       </div>
       <div style={card}>
         <div style={{ fontSize: 11, letterSpacing: 2, color: "#a09080", textTransform: "uppercase", marginBottom: 12 }}>Passo 2 — Conectar o projeto</div>
@@ -1298,7 +1367,18 @@ export default function App() {
       supa.orders.list(cfg),
       supa.reviews.list(cfg),
     ]);
-    if (winesData)   { setWines(winesData.map(w => ({ ...w, promoPrice: w.promo_price, costPrice: w.cost_price, description: w.description || "", keywords: w.keywords || "", harmonization: w.harmonization || "" }))); setSupaConnected(true); }
+    if (winesData && winesData !== "cors_blocked") {
+      setWines(winesData.map(w => ({
+        ...w,
+        promoPrice: w.promo_price,
+        costPrice: w.cost_price,
+        description: w.description || "",
+        keywords: w.keywords || "",
+        harmonization: w.harmonization || "",
+        img: w.img || getImgLocal(w.id) || null, // usa URL do Storage, fallback localStorage
+      })));
+      setSupaConnected(true);
+    }
     if (ordersData)  setOrders(ordersData);
     if (reviewsData) setReviews(reviewsData.map(r => ({ ...r, wineId: r.wine_id })));
     setDbLoading(false);
@@ -1322,42 +1402,79 @@ export default function App() {
   };
 
   // ── Supabase: wrapper para operações com fallback local ──────────────────
+  // Salva imagem localmente como fallback
+  const saveImgLocal = (id, img) => { try { if (img) localStorage.setItem(`v9_img_${id}`, img); } catch {} };
+  const getImgLocal = (id) => { try { return localStorage.getItem(`v9_img_${id}`) || null; } catch { return null; } };
+  const removeImgLocal = (id) => { try { localStorage.removeItem(`v9_img_${id}`); } catch {} };
+
   const dbAddWine = async (wine) => {
-    // Campos aceitos pelo Supabase (sem campos locais como img base64 grande)
+    if (!supaCfg) { showToast("Supabase não configurado.", "error"); return null; }
+
+    // 1. Insere o vinho SEM imagem primeiro para obter o ID
     const w = {
-      name: wine.name,
-      origin: wine.origin || "",
-      region: wine.region || "",
-      year: wine.year ? +wine.year : null,
-      cost_price: +wine.costPrice || 0,
-      price: +wine.price,
-      promo_price: wine.promoPrice ? +wine.promoPrice : null,
-      stock: +wine.stock || 0,
-      category: wine.category || "Tinto",
-      alcohol: wine.alcohol || "",
-      grapes: wine.grapes || "",
-      description: wine.description || "",
-      keywords: wine.keywords || "",
-      harmonization: wine.harmonization || "",
-      img: wine.img || null,
-      rating: 4.5,
-      sales: 0,
+      name: wine.name, origin: wine.origin || "", region: wine.region || "",
+      year: wine.year ? +wine.year : null, cost_price: +wine.costPrice || 0,
+      price: +wine.price, promo_price: wine.promoPrice ? +wine.promoPrice : null,
+      stock: +wine.stock || 0, category: wine.category || "Tinto",
+      alcohol: wine.alcohol || "", grapes: wine.grapes || "",
+      description: wine.description || "", keywords: wine.keywords || "",
+      harmonization: wine.harmonization || "", img: null, rating: 4.5, sales: 0,
     };
-    if (supaCfg) {
-      const r = await supa.wines.insert(w, supaCfg);
-      if (r === "cors_blocked") { showToast("CORS: só funciona após publicar no Vercel.", "error"); return null; }
-      if (r?.[0]) return { ...r[0], description: r[0].description, promoPrice: r[0].promo_price, costPrice: r[0].cost_price, keywords: r[0].keywords || "", harmonization: r[0].harmonization || "" };
-      showToast("Erro ao salvar no Supabase. Verifique o SQL Editor.", "error");
-      return null;
+    const r = await supa.wines.insert(w, supaCfg);
+    if (r === "cors_blocked") { showToast("CORS: só funciona após publicar no Vercel.", "error"); return null; }
+    if (!r?.[0]) { showToast("Erro ao salvar no banco. Tente novamente.", "error"); return null; }
+
+    const saved = { ...r[0], promoPrice: r[0].promo_price, costPrice: r[0].cost_price, keywords: r[0].keywords || "", harmonization: r[0].harmonization || "", img: null };
+
+    // 2. Se tem imagem, faz upload para Storage e atualiza a linha
+    if (wine.img) {
+      showToast("Enviando imagem…");
+      const imgUrl = await supaUploadImage(wine.img, saved.id, supaCfg);
+      if (imgUrl) {
+        await supa.wines.update({ id: saved.id, img: imgUrl }, supaCfg);
+        saved.img = imgUrl;
+      } else {
+        // Fallback: salva base64 no localStorage se Storage falhar
+        saveImgLocal(saved.id, wine.img);
+        saved.img = wine.img;
+        showToast("Imagem salva localmente (configure o Storage no Supabase para salvar online).", "error");
+      }
     }
-    showToast("Supabase não configurado. Configure na aba Banco de Dados.", "error");
-    return null;
+    return saved;
   };
+
   const dbUpdateWine = async (wine) => {
-    const w = { ...wine, cost_price: wine.costPrice, promo_price: wine.promoPrice || null, description: wine.description || wine.desc || "", keywords: wine.keywords || "", harmonization: wine.harmonization || "" };
-    if (supaCfg) await supa.wines.update(w, supaCfg);
+    if (!supaCfg) return;
+    let imgUrl = wine.img;
+
+    // Se a imagem mudou e é base64, faz upload para Storage
+    if (wine.img && wine.img.startsWith("data:")) {
+      const uploaded = await supaUploadImage(wine.img, wine.id, supaCfg);
+      if (uploaded) {
+        imgUrl = uploaded;
+        removeImgLocal(wine.id);
+      } else {
+        saveImgLocal(wine.id, wine.img);
+      }
+    } else if (!wine.img) {
+      removeImgLocal(wine.id);
+    }
+
+    const w = {
+      id: wine.id, name: wine.name, origin: wine.origin || "", region: wine.region || "",
+      year: wine.year ? +wine.year : null, cost_price: +wine.costPrice || 0,
+      price: +wine.price, promo_price: wine.promoPrice ? +wine.promoPrice : null,
+      stock: +wine.stock || 0, category: wine.category || "Tinto",
+      alcohol: wine.alcohol || "", grapes: wine.grapes || "",
+      description: wine.description || "", keywords: wine.keywords || "",
+      harmonization: wine.harmonization || "", img: imgUrl || null,
+    };
+    await supa.wines.update(w, supaCfg);
   };
   const dbDeleteWine = async (id) => {
+    removeImgLocal(id);
+    const wine = wines.find(w => w.id === id);
+    if (wine?.img && wine.img.startsWith("http")) supaDeleteImage(wine.img, supaCfg);
     if (supaCfg) await supa.wines.delete(id, supaCfg);
   };
   const dbInsertOrder = async (order) => {
