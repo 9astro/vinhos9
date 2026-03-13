@@ -1317,46 +1317,67 @@ export default function App() {
   const [loginUser, setLoginUser] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [loginError, setLoginError] = useState("");
-  // 🆕 Banners, destaques, conta cliente
   const [banners, setBanners] = useState(INITIAL_BANNERS);
   const [highlightIds, setHighlightIds] = useState(INITIAL_HIGHLIGHT_WINES);
   const [heroBanner, setHeroBanner] = useState(INITIAL_HERO_BANNER);
   const [clientPanelOpen, setClientPanelOpen] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [editWine, setEditWine] = useState(null);
-  // 🎁 Cupom
+  // 🎁 Cupons — agora editáveis
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState(null);
-  const COUPONS = { "VINO10": 10, "VINO20": 20, "BEMVINDO": 15 };
+  const [customCoupons, setCustomCoupons] = useState(() => { try { const s = localStorage.getItem("v9_coupons"); return s ? JSON.parse(s) : { "VINO10": 10, "VINO20": 20, "BEMVINDO": 5 }; } catch { return { "VINO10": 10, "VINO20": 20, "BEMVINDO": 5 }; } });
+  const COUPONS = customCoupons;
+  const saveCoupons = (c) => { setCustomCoupons(c); try { localStorage.setItem("v9_coupons", JSON.stringify(c)); } catch {} };
+  // 🚚 Frete configurável
+  const [freteConfig, setFreteConfig] = useState(() => { try { const s = localStorage.getItem("v9_frete"); return s ? JSON.parse(s) : { opcoes: [{ id: "pac", nome: "PAC", icon: "📦", prazo: "5 dias úteis", base: 18 }, { id: "sedex", nome: "SEDEX", icon: "⚡", prazo: "2 dias úteis", base: 32 }, { id: "gratis", nome: "Frete Grátis", icon: "🎁", prazo: "7 dias úteis", base: 0, minValue: 500 }] }; } catch { return { opcoes: [] }; } });
+  const saveFreteConfig = (cfg) => { setFreteConfig(cfg); try { localStorage.setItem("v9_frete", JSON.stringify(cfg)); } catch {} };
+  // 📊 Visitas por produto
+  const [wineVisits, setWineVisits] = useState(() => { try { const s = localStorage.getItem("v9_visits"); return s ? JSON.parse(s) : {}; } catch { return {}; } });
+  const trackVisit = (wineId) => { setWineVisits(prev => { const n = { ...prev, [wineId]: (prev[wineId] || 0) + 1 }; try { localStorage.setItem("v9_visits", JSON.stringify(n)); } catch {} return n; }); };
   // 🔍 Filtro de preço
   const [priceRange, setPriceRange] = useState([0, 3000]);
   const [showPriceFilter, setShowPriceFilter] = useState(false);
-  // 📱 Mobile menu
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  // 🔢 Ordenação
-  const [sortBy, setSortBy] = useState("default"); // default | price_asc | price_desc | rating | name
-  // ❤️ Wishlist
+  const [sortBy, setSortBy] = useState("default");
   const [wishlist, setWishlist] = useState([]);
-  // 🎉 Welcome popup
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
   const [welcomeDismissed, setWelcomeDismissed] = useState(false);
-  // 🔍 Autocomplete
   const [showAutocomplete, setShowAutocomplete] = useState(false);
-  // 🔎 Zoom imagem
   const [zoomWine, setZoomWine] = useState(null);
-  const [reviewedWines, setReviewedWines] = useState(new Set()); // anti-spam: 1 review per product per session
-  // 🔄 Skeleton loading
+  const [reviewedWines, setReviewedWines] = useState(new Set());
   const [catalogLoading, setCatalogLoading] = useState(false);
-  // 🗄️ Supabase config
   const [supaCfg, setSupaCfg] = useState(() => getSupaCfg());
   const [supaStatus, setSupaStatus] = useState("idle");
   const [supaConnected, setSupaConnected] = useState(false);
-  const [dbLoading, setDbLoading] = useState(true); // start loading immediately
+  const [dbLoading, setDbLoading] = useState(true);
   const [paymentGateway, setPaymentGateway] = useState(() => { try { return localStorage.getItem("v9_gw") || "mercadopago"; } catch { return "mercadopago"; } });
   const [paymentKeys, setPaymentKeys] = useState(() => { try { const s = localStorage.getItem("v9_keys"); return s ? JSON.parse(s) : {}; } catch { return {}; } });
   const [paymentSaved, setPaymentSaved] = useState(false);
-  // 📊 Exportar CSV
   const [exportMsg, setExportMsg] = useState("");
+
+  // 🔗 URL persistence — salva produto selecionado na URL para sobreviver ao F5
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const pid = params.get("produto");
+    if (pid && wines.length > 0) {
+      const found = wines.find(w => String(w.id) === pid);
+      if (found) { setSelectedWine(found); setPage("store"); }
+    }
+  }, [wines]);
+
+  useEffect(() => {
+    if (selectedWine) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("produto", selectedWine.id);
+      window.history.replaceState(null, "", url.toString());
+      trackVisit(selectedWine.id);
+    } else {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("produto");
+      window.history.replaceState(null, "", url.toString());
+    }
+  }, [selectedWine]);
 
   // ── Supabase: carregar dados ao conectar ─────────────────────────────────
   const loadFromSupabase = useCallback(async (cfg) => {
@@ -2626,7 +2647,7 @@ export default function App() {
               <div style={{ fontSize: 12, color: "#e8b4b4" }}>Administração</div>
             </div>
             <div style={{ flex: 1, overflowX: "auto", overflowY: "auto", display: "flex", flexDirection: "column" }} className="adm-tabs-wrap">
-            {[["dashboard","📊","Dashboard"],["wines","🍷","Vinhos"],["add","➕","Cadastrar"],["csv","📥","Importar CSV"],["banners","🎨","Banners"],["promos","🏷","Promoções"],["orders","📦","Pedidos"],["reviews","⭐","Avaliações"],["pagamento","💳","Pagamento"],["supabase","🗄️","Banco de Dados"],["seguranca","🔐","Segurança"]].map(([tab, icon, label]) => (
+            {[["dashboard","📊","Dashboard"],["wines","🍷","Vinhos"],["add","➕","Cadastrar"],["csv","📥","Importar CSV"],["banners","🎨","Banners"],["promos","🏷","Promoções"],["cupons","🎁","Cupons"],["frete","🚚","Frete"],["imagens","🖼","Galeria"],["orders","📦","Pedidos"],["reviews","⭐","Avaliações"],["pagamento","💳","Pagamento"],["supabase","🗄️","Banco de Dados"],["seguranca","🔐","Segurança"]].map(([tab, icon, label]) => (
               <button key={tab} className="adm-tab" onClick={() => setAdminTab(tab)} style={{ width: "100%", padding: "12px 18px", display: "flex", alignItems: "center", gap: 9, background: adminTab === tab ? "rgba(139,44,44,.3)" : "transparent", border: "none", color: adminTab === tab ? "#e8b4b4" : "#7a6a6a", cursor: "pointer", fontSize: 12, fontFamily: "Georgia,serif", textAlign: "left", borderLeft: adminTab === tab ? "3px solid #8b2c2c" : "3px solid transparent", transition: "all .2s" }}>
                 {icon} {label}
                 {tab === "promos" && promoWines.length > 0 && <span style={{ background: "#b45309", color: "#fef3c7", fontSize: 9, padding: "1px 6px", borderRadius: 10, marginLeft: "auto" }}>{promoWines.length}</span>}
@@ -2639,7 +2660,7 @@ export default function App() {
             </div>
           </aside>
 
-          <main className="adm-content" style={{ flex: 1, padding: 30, overflowY: "auto" }}>
+          <main className="adm-content" style={{ flex: 1, padding: 30, overflowY: "auto", fontSize: 15 }}>
 
             {/* Dashboard */}
             {adminTab === "dashboard" && (
@@ -2698,6 +2719,27 @@ export default function App() {
                     );
                   })}
                 </div>
+                {/* Vinhos mais visitados */}
+                <div style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, padding: 22 }}>
+                  <h3 style={{ fontSize: 11, letterSpacing: 2, color: "#a09080", textTransform: "uppercase", marginBottom: 14 }}>👁 Vinhos Mais Visitados</h3>
+                  {Object.keys(wineVisits).length === 0 ? (
+                    <p style={{ fontSize: 12, color: "#3a2a2a" }}>Nenhuma visita registrada ainda. As visitas são contadas quando clientes abrem a página de um produto.</p>
+                  ) : (
+                    [...wines]
+                      .map(w => ({ ...w, visits: wineVisits[w.id] || 0 }))
+                      .filter(w => w.visits > 0)
+                      .sort((a, b) => b.visits - a.visits)
+                      .slice(0, 5)
+                      .map((w, i) => (
+                        <div key={w.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 0", borderBottom: "1px solid #1a1410" }}>
+                          <span style={{ fontSize: 13, color: ["#ffd700","#c0c0c0","#cd7f32","#a09080","#7a6a6a"][i], width: 20 }}>#{i+1}</span>
+                          <div style={{ width: 32, height: 32, borderRadius: 6, overflow: "hidden", flexShrink: 0 }}><WineThumb wine={w} height={32} /></div>
+                          <div style={{ flex: 1 }}><div style={{ fontSize: 12, color: "#f5f0e8" }}>{w.name}</div><div style={{ fontSize: 9, color: "#5a4a4a" }}>{w.category} · {w.origin}</div></div>
+                          <div style={{ background: "#1a2a3a", color: "#60a5fa", padding: "3px 10px", borderRadius: 10, fontSize: 11, fontWeight: "bold" }}>{w.visits} visitas</div>
+                        </div>
+                      ))
+                  )}
+                </div>
               </div>
             )}
 
@@ -2738,7 +2780,7 @@ export default function App() {
                             <div style={{ display: "flex", gap: 5 }}>
                               <button onClick={() => setEditWine({ ...w })} style={{ background: "none", border: "1px solid #2a3a2a", color: "#4ade80", padding: "3px 9px", borderRadius: 4, cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>Editar</button>
                               <button onClick={() => handleDeleteWine(w.id)} style={{ background: "none", border: "1px solid #3a1f1f", color: "#ef4444", padding: "3px 9px", borderRadius: 4, cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>Remover</button>
-                              <button onClick={() => { const url = window.location.href.split('?')[0] + '?produto=' + encodeURIComponent(w.id); window.open(url, '_blank'); }} style={{ background: "none", border: "1px solid #2a2a3a", color: "#a0a0e8", padding: "3px 9px", borderRadius: 4, cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>👁 Ver</button>
+                              <button onClick={() => { const base = window.location.href.split('?')[0]; window.open(`${base}?produto=${encodeURIComponent(w.id)}`, '_blank'); }} style={{ background: "none", border: "1px solid #2a2a3a", color: "#a0a0e8", padding: "3px 9px", borderRadius: 4, cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>👁 Ver</button>
                             </div>
                           </td>
                         </tr>
@@ -3109,9 +3151,187 @@ export default function App() {
                     </button>
                   </div>
 
-                  <div style={{ marginTop: 16, padding: "12px 16px", background: "rgba(139,44,44,.06)", border: "1px solid rgba(139,44,44,.2)", borderRadius: 8, fontSize: 11, color: "#8b6060" }}>
+                  <div style={{ marginTop: 16, padding: "12px 16px", background: "rgba(139,44,44,.06)", border: "1px solid rgba(139,44,44,.2)", borderRadius: 8, fontSize: 13, color: "#8b6060" }}>
                     💡 <strong>Dica:</strong> Após importar, vá em <strong>Vinhos</strong> e clique em <strong>Editar</strong> para adicionar as imagens dos produtos individualmente.
                   </div>
+
+                  {/* 🤖 IA: Gerar CSV por imagem */}
+                  {(() => {
+                    const [aiImg, setAiImg] = React.useState(null);
+                    const [aiLoading, setAiLoading] = React.useState(false);
+                    const [aiCSV, setAiCSV] = React.useState("");
+                    const aiImgRef = React.useRef();
+                    const gerarCSV = async () => {
+                      if (!aiImg) return showToast("Selecione uma imagem primeiro.", "error");
+                      setAiLoading(true); setAiCSV("");
+                      try {
+                        const base64 = aiImg.split(",")[1];
+                        const mime = aiImg.split(";")[0].split(":")[1];
+                        const resp = await fetch("https://api.anthropic.com/v1/messages", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({
+                            model: "claude-sonnet-4-20250514",
+                            max_tokens: 1000,
+                            messages: [{
+                              role: "user",
+                              content: [
+                                { type: "image", source: { type: "base64", media_type: mime, data: base64 } },
+                                { type: "text", text: `Analise esta imagem de vinho e retorne APENAS uma linha CSV (sem cabeçalho) com os campos exatamente nesta ordem, separados por vírgula:
+name (título SEO otimizado para Google ex: "Vinho Tinto Francês Bordeaux Merlot 2020"),origin,region,year,costPrice (deixe vazio),price (estimativa em reais),promoPrice (deixe vazio),stock (deixe 10),category (Tinto/Branco/Espumante/Rosé),alcohol,grapes,description (descrição SEO detalhada),keywords (palavras-chave SEO separadas por ponto-e-vírgula),harmonization (sugestões separadas por vírgula),rating (4.5),sales (0)
+Responda SOMENTE a linha CSV, sem explicações, sem cabeçalho, sem markdown.` }
+                              ]
+                            }]
+                          })
+                        });
+                        const data = await resp.json();
+                        const csv = data.content?.find(b => b.type === "text")?.text?.trim() || "";
+                        setAiCSV(csv);
+                        showToast("CSV gerado pela IA! ✅");
+                      } catch (e) {
+                        showToast("Erro ao chamar a IA. Tente novamente.", "error");
+                      }
+                      setAiLoading(false);
+                    };
+                    const baixarCSV = () => {
+                      const header = "name,origin,region,year,costPrice,price,promoPrice,stock,category,alcohol,grapes,description,keywords,harmonization,rating,sales\n";
+                      const blob = new Blob([header + aiCSV + "\n"], { type: "text/csv" });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a"); a.href = url; a.download = "vinho-ia.csv"; a.click();
+                      URL.revokeObjectURL(url);
+                    };
+                    return (
+                      <div style={{ marginTop: 24, background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #3a2a4a", borderRadius: 10, padding: 22 }}>
+                        <div style={{ fontSize: 12, letterSpacing: 2, color: "#c084fc", textTransform: "uppercase", marginBottom: 6 }}>🤖 Gerar CSV com Inteligência Artificial</div>
+                        <p style={{ fontSize: 13, color: "#7a6a6a", lineHeight: 1.7, marginBottom: 16 }}>Envie a foto de um vinho e a IA identifica automaticamente os dados e gera o CSV com <strong style={{ color: "#e8b4b4" }}>título SEO otimizado</strong>.</p>
+                        <input type="file" accept="image/*" ref={aiImgRef} style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => setAiImg(ev.target.result); r.readAsDataURL(f); }} />
+                        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-start" }}>
+                          <div>
+                            <button onClick={() => aiImgRef.current?.click()} style={{ padding: "10px 18px", background: "#1a1410", border: "1px solid #3a2f4a", color: "#c084fc", borderRadius: 4, cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif" }}>🖼 Selecionar Imagem</button>
+                            {aiImg && <div style={{ marginTop: 10 }}><img src={aiImg} alt="preview" style={{ width: 100, height: 100, objectFit: "cover", borderRadius: 8, border: "1px solid #3a2a4a" }} /></div>}
+                          </div>
+                          <button onClick={gerarCSV} disabled={!aiImg || aiLoading} style={{ padding: "10px 22px", background: aiLoading ? "#2a1f2a" : "#6d28d9", border: "none", borderRadius: 4, color: "#fff", cursor: aiImg && !aiLoading ? "pointer" : "not-allowed", fontSize: 13, fontFamily: "Georgia,serif", letterSpacing: 1 }}>
+                            {aiLoading ? "⏳ Analisando..." : "✨ Gerar CSV com IA"}
+                          </button>
+                        </div>
+                        {aiCSV && (
+                          <div style={{ marginTop: 16 }}>
+                            <div style={{ fontSize: 11, color: "#5a4a4a", marginBottom: 6, letterSpacing: 1, textTransform: "uppercase" }}>CSV gerado:</div>
+                            <div style={{ background: "#0c0a09", borderRadius: 6, padding: "10px 14px", fontSize: 11, color: "#4ade80", fontFamily: "monospace", marginBottom: 12, wordBreak: "break-all", lineHeight: 1.6 }}>{aiCSV}</div>
+                            <div style={{ display: "flex", gap: 10 }}>
+                              <button onClick={baixarCSV} style={{ padding: "9px 18px", background: "#1a3a1a", border: "1px solid #4ade80", borderRadius: 4, color: "#4ade80", cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif" }}>⬇ Baixar CSV</button>
+                              <button onClick={async () => { const header = "name,origin,region,year,costPrice,price,promoPrice,stock,category,alcohol,grapes,description,keywords,harmonization,rating,sales\n"; const blob = new Blob([header + aiCSV + "\n"], { type: "text/csv" }); const f = new File([blob], "vinho-ia.csv"); await importCSV(f); setAiCSV(""); setAiImg(null); }} style={{ padding: "9px 18px", background: "#8b2c2c", border: "none", borderRadius: 4, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif" }}>📥 Importar direto</button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              );
+            })()}
+
+            {/* 💳 Gateway de Pagamento */}
+            {/* 🎁 Cupons */}
+            {adminTab === "cupons" && (() => {
+              const [newCode, setNewCode] = React.useState("");
+              const [newPct, setNewPct] = React.useState("");
+              const addCoupon = () => {
+                const code = newCode.toUpperCase().trim();
+                if (!code || !newPct || +newPct <= 0 || +newPct > 100) return showToast("Preencha código e percentual válido.", "error");
+                saveCoupons({ ...customCoupons, [code]: +newPct });
+                setNewCode(""); setNewPct(""); showToast(`Cupom ${code} criado! ✅`);
+              };
+              return (
+                <div style={{ maxWidth: 600 }}>
+                  <h1 style={{ fontSize: 24, marginBottom: 5 }}>🎁 Gerenciar Cupons</h1>
+                  <p style={{ color: "#7a6a6a", fontSize: 13, marginBottom: 24 }}>Crie e edite cupons de desconto para seus clientes.</p>
+                  <div style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, padding: 22, marginBottom: 20 }}>
+                    <div style={{ fontSize: 12, letterSpacing: 2, color: "#a09080", textTransform: "uppercase", marginBottom: 16 }}>Criar Novo Cupom</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr auto", gap: 12, alignItems: "end" }}>
+                      <div>
+                        <label style={{ display: "block", fontSize: 11, color: "#5a4a4a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Código</label>
+                        <input value={newCode} onChange={e => setNewCode(e.target.value.toUpperCase())} placeholder="Ex: NATAL20"
+                          style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "10px 12px", color: "#fbbf24", fontSize: 14, fontFamily: "monospace", letterSpacing: 2 }} />
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: 11, color: "#5a4a4a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Desconto (%)</label>
+                        <input type="number" value={newPct} onChange={e => setNewPct(e.target.value)} placeholder="Ex: 15" min="1" max="100"
+                          style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "10px 12px", color: "#4ade80", fontSize: 14, fontFamily: "Georgia,serif" }} />
+                      </div>
+                      <button onClick={addCoupon} style={{ padding: "10px 18px", background: "#8b2c2c", border: "none", borderRadius: 4, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif" }}>+ Adicionar</button>
+                    </div>
+                  </div>
+                  <div style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, padding: 22 }}>
+                    <div style={{ fontSize: 12, letterSpacing: 2, color: "#a09080", textTransform: "uppercase", marginBottom: 16 }}>Cupons Ativos ({Object.keys(customCoupons).length})</div>
+                    {Object.entries(customCoupons).map(([code, pct]) => (
+                      <div key={code} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: "1px solid #1a1410" }}>
+                        <div style={{ background: "#120e0c", border: "1px dashed #8b2c2c", borderRadius: 6, padding: "6px 16px", minWidth: 120 }}>
+                          <span style={{ fontSize: 15, letterSpacing: 3, color: "#fbbf24", fontWeight: "bold" }}>{code}</span>
+                        </div>
+                        <div style={{ flex: 1, fontSize: 14, color: "#4ade80", fontWeight: "bold" }}>{pct}% OFF</div>
+                        <button onClick={() => { const updated = { ...customCoupons }; delete updated[code]; saveCoupons(updated); showToast(`Cupom ${code} removido.`, "error"); }}
+                          style={{ background: "none", border: "1px solid #3a1f1f", color: "#ef4444", padding: "5px 12px", borderRadius: 4, cursor: "pointer", fontSize: 12, fontFamily: "Georgia,serif" }}>🗑 Remover</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* 🚚 Frete */}
+            {adminTab === "frete" && (() => {
+              const [editando, setEditando] = React.useState(null);
+              const [form, setForm] = React.useState({ id: "", nome: "", icon: "📦", prazo: "", base: "", minValue: "" });
+              const opcoes = freteConfig.opcoes || [];
+              const startEdit = (op) => { setEditando(op.id); setForm({ ...op, base: op.base, minValue: op.minValue || "" }); };
+              const saveEdit = () => {
+                const updated = opcoes.map(o => o.id === editando ? { ...form, base: +form.base || 0, minValue: form.minValue ? +form.minValue : undefined } : o);
+                saveFreteConfig({ opcoes: updated }); setEditando(null); showToast("Frete atualizado! ✅");
+              };
+              const addOpcao = () => {
+                const nova = { id: `frete_${Date.now()}`, nome: "Nova Opção", icon: "🚚", prazo: "7 dias úteis", base: 0 };
+                saveFreteConfig({ opcoes: [...opcoes, nova] }); startEdit(nova.id);
+              };
+              return (
+                <div style={{ maxWidth: 700 }}>
+                  <h1 style={{ fontSize: 24, marginBottom: 5 }}>🚚 Configurar Frete</h1>
+                  <p style={{ color: "#7a6a6a", fontSize: 13, marginBottom: 24 }}>Gerencie as opções de entrega exibidas aos clientes.</p>
+                  {opcoes.map(op => (
+                    <div key={op.id} style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: `1px solid ${editando === op.id ? "#8b2c2c" : "#2a1f1f"}`, borderRadius: 10, padding: 20, marginBottom: 14 }}>
+                      {editando === op.id ? (
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                          {[["nome","Nome (ex: PAC)"],["icon","Ícone (emoji)"],["prazo","Prazo (ex: 5 dias úteis)"],["base","Preço base (R$)"]].map(([f, l]) => (
+                            <div key={f}>
+                              <label style={{ display: "block", fontSize: 11, color: "#5a4a4a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 5 }}>{l}</label>
+                              <input value={form[f] ?? ""} onChange={e => setForm(p => ({ ...p, [f]: e.target.value }))}
+                                style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "9px 11px", color: "#f5f0e8", fontSize: 14, fontFamily: "Georgia,serif" }} />
+                            </div>
+                          ))}
+                          <div style={{ gridColumn: "1/-1" }}>
+                            <label style={{ display: "block", fontSize: 11, color: "#5a4a4a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 5 }}>Valor mínimo para frete grátis (R$) — deixe vazio se não aplicar</label>
+                            <input type="number" value={form.minValue ?? ""} onChange={e => setForm(p => ({ ...p, minValue: e.target.value }))}
+                              style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "9px 11px", color: "#fbbf24", fontSize: 14, fontFamily: "Georgia,serif" }} />
+                          </div>
+                          <div style={{ gridColumn: "1/-1", display: "flex", gap: 10 }}>
+                            <button onClick={saveEdit} style={{ padding: "9px 20px", background: "#8b2c2c", border: "none", borderRadius: 4, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif" }}>💾 Salvar</button>
+                            <button onClick={() => setEditando(null)} style={{ padding: "9px 16px", background: "none", border: "1px solid #2a1f1f", borderRadius: 4, color: "#7a6a6a", cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif" }}>Cancelar</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                          <div style={{ fontSize: 28 }}>{op.icon}</div>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: 15, color: "#f5f0e8", fontWeight: "bold" }}>{op.nome}</div>
+                            <div style={{ fontSize: 12, color: "#7a6a6a" }}>{op.prazo} · {op.base === 0 ? <span style={{ color: "#4ade80" }}>Grátis</span> : `R$ ${(+op.base).toFixed(2)} base`}{op.minValue ? ` · Grátis acima de R$ ${op.minValue}` : ""}</div>
+                          </div>
+                          <button onClick={() => startEdit(op.id)} style={{ background: "none", border: "1px solid #2a3a2a", color: "#4ade80", padding: "6px 14px", borderRadius: 4, cursor: "pointer", fontSize: 12, fontFamily: "Georgia,serif" }}>✏️ Editar</button>
+                          <button onClick={() => { saveFreteConfig({ opcoes: opcoes.filter(o => o.id !== op.id) }); showToast("Opção removida.", "error"); }} style={{ background: "none", border: "1px solid #3a1f1f", color: "#ef4444", padding: "6px 12px", borderRadius: 4, cursor: "pointer", fontSize: 12, fontFamily: "Georgia,serif" }}>🗑</button>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <button onClick={addOpcao} style={{ marginTop: 8, padding: "10px 22px", background: "#1a1410", border: "1px solid #3a2f2f", borderRadius: 4, color: "#e8b4b4", cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif" }}>+ Adicionar opção de frete</button>
                 </div>
               );
             })()}
@@ -3199,6 +3419,138 @@ export default function App() {
 
             {adminTab === "seguranca" && <SegurancaPanel showToast={showToast} />}
 
+            {/* 🖼 Galeria de Imagens */}
+            {adminTab === "imagens" && (() => {
+              const [imgs, setImgs] = React.useState([]);
+              const [loading, setLoading] = React.useState(true);
+              const [deleting, setDeleting] = React.useState(null);
+
+              React.useEffect(() => {
+                const load = async () => {
+                  setLoading(true);
+                  if (!supaCfg) { setLoading(false); return; }
+                  try {
+                    const c = supaCfg;
+                    const r = await fetch(`${c.url}/storage/v1/object/list/wines`, {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json", "apikey": c.key, "Authorization": `Bearer ${c.key}` },
+                      body: JSON.stringify({ prefix: "", limit: 200, offset: 0 })
+                    });
+                    const data = await r.json();
+                    if (Array.isArray(data)) {
+                      const list = data.filter(f => f.name && !f.name.endsWith("/")).map(f => ({
+                        name: f.name,
+                        url: `${c.url}/storage/v1/object/public/wines/${f.name}`,
+                        size: f.metadata?.size || 0,
+                        created: f.created_at,
+                      }));
+                      // Enriquecer com vinho associado
+                      setImgs(list.map(img => {
+                        const wine = wines.find(w => w.img && w.img.includes(img.name));
+                        return { ...img, wine };
+                      }));
+                    } else {
+                      setImgs([]);
+                    }
+                  } catch (e) {
+                    setImgs([]);
+                  }
+                  setLoading(false);
+                };
+                load();
+              }, [adminTab]);
+
+              const handleDelete = async (img) => {
+                if (!confirm(`Deletar imagem "${img.name}"?\n${img.wine ? `⚠️ Esta imagem está associada ao vinho: ${img.wine.name}` : "Esta imagem não está associada a nenhum vinho."}`)) return;
+                setDeleting(img.name);
+                try {
+                  const c = supaCfg;
+                  const r = await fetch(`${c.url}/storage/v1/object/wines/${img.name}`, {
+                    method: "DELETE",
+                    headers: { "apikey": c.key, "Authorization": `Bearer ${c.key}` }
+                  });
+                  if (r.ok) {
+                    // Se tinha vinho associado, limpa o img dele
+                    if (img.wine) {
+                      await supaFetch("wines", "PATCH", { img: null }, `id=eq.${img.wine.id}`, supaCfg);
+                      setWines(prev => prev.map(w => w.id === img.wine.id ? { ...w, img: null } : w));
+                    }
+                    setImgs(prev => prev.filter(i => i.name !== img.name));
+                    showToast("Imagem deletada! ✅");
+                  } else {
+                    showToast("Erro ao deletar imagem.", "error");
+                  }
+                } catch {
+                  showToast("Erro ao deletar imagem.", "error");
+                }
+                setDeleting(null);
+              };
+
+              const fmtSize = (b) => b > 1024*1024 ? `${(b/1024/1024).toFixed(1)} MB` : `${Math.round(b/1024)} KB`;
+
+              return (
+                <div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
+                    <div>
+                      <h1 style={{ fontSize: 24, marginBottom: 4 }}>🖼 Galeria de Imagens</h1>
+                      <p style={{ color: "#7a6a6a", fontSize: 13 }}>{loading ? "Carregando…" : `${imgs.length} imagem${imgs.length !== 1 ? "s" : ""} no Supabase Storage`}</p>
+                    </div>
+                    <button onClick={() => setAdminTab("imagens")} style={{ padding: "8px 16px", background: "#1a1410", border: "1px solid #3a2f2f", borderRadius: 4, color: "#a09080", cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif" }}>🔄 Recarregar</button>
+                  </div>
+
+                  {!supaCfg && <div style={{ padding: "20px", background: "rgba(139,44,44,.08)", border: "1px solid rgba(139,44,44,.3)", borderRadius: 8, color: "#8b6060", fontSize: 13 }}>⚠️ Configure o Supabase primeiro na aba Banco de Dados.</div>}
+
+                  {loading && (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16 }}>
+                      {[...Array(6)].map((_, i) => <div key={i} style={{ background: "#1a1410", borderRadius: 10, height: 220, animation: "pulse 1.5s infinite" }} />)}
+                    </div>
+                  )}
+
+                  {!loading && imgs.length === 0 && supaCfg && (
+                    <div style={{ textAlign: "center", padding: 60, color: "#3a2a2a", fontSize: 14 }}>
+                      <div style={{ fontSize: 48, marginBottom: 12 }}>🖼</div>
+                      Nenhuma imagem encontrada no Storage.<br />
+                      <span style={{ fontSize: 12 }}>Cadastre vinhos com foto para vê-las aqui.</span>
+                    </div>
+                  )}
+
+                  {!loading && imgs.length > 0 && (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 16 }}>
+                      {imgs.map(img => (
+                        <div key={img.name} style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, overflow: "hidden", transition: "border-color .2s" }}
+                          onMouseEnter={e => e.currentTarget.style.borderColor = "#8b2c2c"}
+                          onMouseLeave={e => e.currentTarget.style.borderColor = "#2a1f1f"}>
+                          {/* Imagem */}
+                          <div style={{ position: "relative", width: "100%", height: 160, background: "#0c0a09", overflow: "hidden" }}>
+                            <img src={img.url} alt={img.name} style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                              onError={e => { e.target.style.display = "none"; }} />
+                            {img.wine && (
+                              <div style={{ position: "absolute", top: 6, left: 6, background: "rgba(139,44,44,.85)", borderRadius: 4, padding: "2px 7px", fontSize: 10, color: "#fff" }}>
+                                🍷 Vinculada
+                              </div>
+                            )}
+                          </div>
+                          {/* Info */}
+                          <div style={{ padding: "10px 12px" }}>
+                            <div style={{ fontSize: 11, color: "#7a6a6a", marginBottom: 4, wordBreak: "break-all", lineHeight: 1.4 }}>{img.name}</div>
+                            {img.wine && <div style={{ fontSize: 11, color: "#e8b4b4", marginBottom: 4 }} title={img.wine.name}>📦 {img.wine.name.slice(0, 22)}{img.wine.name.length > 22 ? "…" : ""}</div>}
+                            {img.size > 0 && <div style={{ fontSize: 10, color: "#3a2a2a", marginBottom: 8 }}>{fmtSize(img.size)}</div>}
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <a href={img.url} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "6px", background: "#1a2a3a", border: "1px solid #2a3a4a", borderRadius: 4, color: "#60a5fa", fontSize: 11, textDecoration: "none", fontFamily: "Georgia,serif" }}>🔗 Ver</a>
+                              <button onClick={() => handleDelete(img)} disabled={deleting === img.name}
+                                style={{ flex: 1, padding: "6px", background: deleting === img.name ? "#1a1410" : "#2a1010", border: "1px solid #3a1f1f", borderRadius: 4, color: deleting === img.name ? "#5a4a4a" : "#ef4444", cursor: deleting === img.name ? "not-allowed" : "pointer", fontSize: 11, fontFamily: "Georgia,serif" }}>
+                                {deleting === img.name ? "⏳" : "🗑 Del"}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
+
           </main>
         </div>
       )}
@@ -3246,7 +3598,7 @@ export default function App() {
             <div style={{ fontSize: 28, marginBottom: 10 }}>🎉</div>
             <div style={{ fontSize: 14, color: "#e8b4b4", fontWeight: "bold", marginBottom: 6 }}>Bem-vindo à Vinhos9!</div>
             <p style={{ fontSize: 12, color: "#a09080", lineHeight: 1.7, marginBottom: 14 }}>
-              Ganhe <strong style={{ color: "#fbbf24" }}>15% de desconto</strong> na sua primeira compra usando o cupom:
+              Ganhe <strong style={{ color: "#fbbf24" }}>5% de desconto</strong> na sua primeira compra usando o cupom:
             </p>
             <div style={{ background: "#120e0c", border: "1px dashed #8b2c2c", borderRadius: 6, padding: "10px 16px", textAlign: "center", marginBottom: 14 }}>
               <span style={{ fontSize: 18, letterSpacing: 4, color: "#fbbf24", fontWeight: "bold" }}>BEMVINDO</span>
