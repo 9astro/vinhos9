@@ -53,45 +53,20 @@ const supa = {
                delete: (id, c) => supaFetch("reviews", "DELETE", null, `id=eq.${id}`, c) },
 };
 
-const INITIAL_WINES = [
-  { id: 1, name: "Château Margaux", origin: "França", year: 2018, costPrice: 620, price: 890, promoPrice: null, stock: 12, category: "Tinto", img: null, description: "Grand Cru Classé de Bordeaux, elegante e complexo com notas de ameixa e cedro.", sales: 8, rating: 4.9, region: "Bordeaux", alcohol: "13.5%", grapes: "Cabernet Sauvignon, Merlot" },
-  { id: 2, name: "Opus One", origin: "EUA", year: 2019, costPrice: 900, price: 1250, promoPrice: 990, stock: 6, category: "Tinto", img: null, description: "Icônico blend Napa Valley, corpo pleno com taninos sedosos e final longo.", sales: 5, rating: 4.8, region: "Napa Valley", alcohol: "14.5%", grapes: "Cabernet Sauvignon, Merlot, Petit Verdot" },
-  { id: 3, name: "Cloudy Bay Sauvignon", origin: "Nova Zelândia", year: 2022, costPrice: 110, price: 189, promoPrice: 149, stock: 30, category: "Branco", img: null, description: "Fresco e vibrante, com aromas de maracujá, limão e ervas frescas.", sales: 22, rating: 4.6, region: "Marlborough", alcohol: "13%", grapes: "Sauvignon Blanc" },
-  { id: 4, name: "Penfolds Grange", origin: "Austrália", year: 2017, costPrice: 1500, price: 2100, promoPrice: null, stock: 4, category: "Tinto", img: null, description: "Shiraz lendário da Austrália, concentrado e encorpado com décadas de envelhecimento.", sales: 3, rating: 5.0, region: "Barossa Valley", alcohol: "14.5%", grapes: "Shiraz" },
-  { id: 5, name: "Veuve Clicquot Brut", origin: "França", year: 2020, costPrice: 280, price: 420, promoPrice: 359, stock: 18, category: "Espumante", img: null, description: "Champagne clássico com bolhas finas, notas de brioche e frutas cítricas.", sales: 15, rating: 4.7, region: "Champagne", alcohol: "12%", grapes: "Pinot Noir, Chardonnay" },
-  { id: 6, name: "Antinori Tignanello", origin: "Itália", year: 2019, costPrice: 470, price: 680, promoPrice: null, stock: 9, category: "Tinto", img: null, description: "Super Toscano premiado, blend de Sangiovese com Cabernet Sauvignon.", sales: 11, rating: 4.8, region: "Toscana", alcohol: "14%", grapes: "Sangiovese, Cabernet Sauvignon" },
-  { id: 7, name: "Kim Crawford Rosé", origin: "Nova Zelândia", year: 2023, costPrice: 80, price: 139, promoPrice: 99, stock: 24, category: "Rosé", img: null, description: "Rosé elegante com notas de morango, framboesa e pétalas de rosa. Leve e refrescante.", sales: 18, rating: 4.5, region: "Marlborough", alcohol: "12.5%", grapes: "Merlot, Syrah" },
-  { id: 8, name: "Moët & Chandon Impérial", origin: "França", year: 2021, costPrice: 200, price: 310, promoPrice: null, stock: 14, category: "Espumante", img: null, description: "O Champagne mais icônico do mundo, com elegância e frescor incomparáveis.", sales: 9, rating: 4.6, region: "Épernay", alcohol: "12%", grapes: "Pinot Noir, Pinot Meunier, Chardonnay" },
-];
+const INITIAL_WINES = [];
 
 const SALES_DATA = [
-  { month: "Jan", revenue: 12400, cost: 8200, orders: 18 },
-  { month: "Fev", revenue: 18900, cost: 12400, orders: 27 },
-  { month: "Mar", revenue: 15200, cost: 10100, orders: 22 },
-  { month: "Abr", revenue: 22100, cost: 14600, orders: 31 },
-  { month: "Mai", revenue: 19800, cost: 13200, orders: 28 },
-  { month: "Jun", revenue: 27600, cost: 18200, orders: 39 },
+  { month: "Jan", revenue: 0, cost: 0, orders: 0 },
+  { month: "Fev", revenue: 0, cost: 0, orders: 0 },
+  { month: "Mar", revenue: 0, cost: 0, orders: 0 },
+  { month: "Abr", revenue: 0, cost: 0, orders: 0 },
+  { month: "Mai", revenue: 0, cost: 0, orders: 0 },
+  { month: "Jun", revenue: 0, cost: 0, orders: 0 },
 ];
 
-const INITIAL_ORDERS = [
-  { id: "#0041", customer: "Ana Souza", wine: "Château Margaux", qty: 2, total: 1780, status: "Entregue", date: "08/03/2026" },
-  { id: "#0042", customer: "Bruno Lima", wine: "Veuve Clicquot Brut", qty: 3, total: 1260, status: "Em trânsito", date: "09/03/2026" },
-  { id: "#0043", customer: "Carla Matos", wine: "Cloudy Bay Sauvignon", qty: 1, total: 189, status: "Aguardando", date: "10/03/2026" },
-  { id: "#0044", customer: "Daniel Reis", wine: "Opus One", qty: 1, total: 1250, status: "Em trânsito", date: "10/03/2026" },
-  { id: "#0045", customer: "Eva Pinto", wine: "Tignanello", qty: 2, total: 1360, status: "Entregue", date: "11/03/2026" },
-];
+const INITIAL_ORDERS = [];
 
-const INITIAL_REVIEWS = [
-  { id: 1, wineId: 1, author: "Carlos Mendes", rating: 5, comment: "Excepcional! Um dos melhores vinhos que já provei. Complexidade incrível, taninos sedosos e final que dura minutos. Vale cada centavo.", date: "05/03/2026", approved: true },
-  { id: 2, wineId: 1, author: "Fernanda Lima", rating: 4, comment: "Vinho magnífico, estrutura perfeita. Abri numa ocasião especial e todos ficaram impressionados. Recomendo muito!", date: "28/02/2026", approved: true },
-  { id: 3, wineId: 1, author: "Ricardo Alves", rating: 5, comment: "Entrega rápida e vinho impecável. Notas de ameixa, cedro e um toque de tabaco. Bordeaux clássico ao melhor estilo.", date: "20/02/2026", approved: true },
-  { id: 4, wineId: 2, author: "Mariana Costa", rating: 5, comment: "O Opus One é simplesmente divino. Comprei para o aniversário do meu marido e foi a surpresa da noite!", date: "07/03/2026", approved: true },
-  { id: 5, wineId: 2, author: "Paulo Saraiva", rating: 4, comment: "Vinho de altíssimo nível, corpo pleno e elegante ao mesmo tempo. Entrega dentro do prazo e bem embalado.", date: "01/03/2026", approved: true },
-  { id: 6, wineId: 3, author: "Juliana Ramos", rating: 5, comment: "Perfeito para o verão! Fresco, aromático, levíssimo. Tomei gelado com frutos do mar e foi combinação perfeita.", date: "09/03/2026", approved: true },
-  { id: 7, wineId: 5, author: "Beatriz Torres", rating: 5, comment: "O Veuve Clicquot nunca decepciona. Bolhas finas e persistentes, elegante do começo ao fim. Perfeito para celebrar!", date: "10/03/2026", approved: true },
-  { id: 8, wineId: 6, author: "André Nunes", rating: 5, comment: "Tignanello é obra de arte. Blend equilibrado, taninos presentes mas maduros. Um dos melhores Super Toscanos acessíveis.", date: "06/03/2026", approved: true },
-  { id: 9, wineId: 3, author: "Sofia Pimentel", rating: 4, comment: "Cloudy Bay é referência em Sauvignon Blanc. Muito aromático, bom custo-benefício para a qualidade que entrega.", date: "03/03/2026", approved: false },
-];
+const INITIAL_REVIEWS = [];
 
 const INITIAL_BANNERS = [
   { id: 1, title: "Semana do Champagne", subtitle: "Espumantes franceses com até 20% OFF", cta: "Ver Ofertas", bg: "linear-gradient(135deg,#1a1000 0%,#2a1500 50%,#1a0a00 100%)", accent: "#fbbf24", tag: "PROMOÇÃO", active: true, targetFilter: "Espumante" },
@@ -107,6 +82,8 @@ const INITIAL_HERO_BANNER = {
   titleAccent: "de Excelência",
   subtitle: "Curadoria especial das melhores regiões vinícolas do mundo.",
   ctaLabel: "Explorar Catálogo",
+  imgDesktop: null, // imagem de fundo desktop (recomendado 1920×600px)
+  imgMobile: null,  // imagem de fundo mobile (recomendado 768×500px)
 };
 
 const MOCK_CLIENT = {
@@ -1075,6 +1052,7 @@ const SupabasePanel = ({ supaCfg, supaConnected, supaStatus, testSupaConnection,
   cost_price numeric default 0, price numeric not null, promo_price numeric,
   stock int default 0, category text default 'Tinto',
   alcohol text, grapes text, description text, img text,
+  keywords text default '', harmonization text default '',
   rating numeric default 4.5, sales int default 0,
   created_at timestamptz default now()
 );
@@ -1320,7 +1298,7 @@ export default function App() {
       supa.orders.list(cfg),
       supa.reviews.list(cfg),
     ]);
-    if (winesData)   { setWines(winesData.map(w => ({ ...w, promoPrice: w.promo_price, costPrice: w.cost_price, desc: w.description }))); setSupaConnected(true); }
+    if (winesData)   { setWines(winesData.map(w => ({ ...w, promoPrice: w.promo_price, costPrice: w.cost_price, description: w.description || "", keywords: w.keywords || "", harmonization: w.harmonization || "" }))); setSupaConnected(true); }
     if (ordersData)  setOrders(ordersData);
     if (reviewsData) setReviews(reviewsData.map(r => ({ ...r, wineId: r.wine_id })));
     setDbLoading(false);
@@ -1345,12 +1323,12 @@ export default function App() {
 
   // ── Supabase: wrapper para operações com fallback local ──────────────────
   const dbAddWine = async (wine) => {
-    const w = { ...wine, cost_price: wine.costPrice, promo_price: wine.promoPrice || null, description: wine.desc || "" };
-    if (supaCfg) { const r = await supa.wines.insert(w, supaCfg); if (r?.[0]) return { ...r[0], desc: r[0].description, promoPrice: r[0].promo_price, costPrice: r[0].cost_price }; }
+    const w = { ...wine, cost_price: wine.costPrice, promo_price: wine.promoPrice || null, description: wine.description || wine.desc || "", keywords: wine.keywords || "", harmonization: wine.harmonization || "" };
+    if (supaCfg) { const r = await supa.wines.insert(w, supaCfg); if (r?.[0]) return { ...r[0], description: r[0].description, promoPrice: r[0].promo_price, costPrice: r[0].cost_price, keywords: r[0].keywords || "", harmonization: r[0].harmonization || "" }; }
     return { ...wine, id: Date.now() };
   };
   const dbUpdateWine = async (wine) => {
-    const w = { ...wine, cost_price: wine.costPrice, promo_price: wine.promoPrice || null, description: wine.desc || "" };
+    const w = { ...wine, cost_price: wine.costPrice, promo_price: wine.promoPrice || null, description: wine.description || wine.desc || "", keywords: wine.keywords || "", harmonization: wine.harmonization || "" };
     if (supaCfg) await supa.wines.update(w, supaCfg);
   };
   const dbDeleteWine = async (id) => {
@@ -1391,7 +1369,7 @@ export default function App() {
   const emptyCheckout = { nome: "", cpf: "", contato: "", cep: "", rua: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" };
   const [checkoutData, setCheckoutData] = useState(emptyCheckout);
   const [checkoutStep, setCheckoutStep] = useState(1); // 1=dados, 2=confirmação, 3=sucesso
-  const emptyWine = { name: "", origin: "", region: "", year: "", costPrice: "", price: "", promoPrice: "", stock: "", category: "Tinto", description: "", alcohol: "", grapes: "", img: null };
+  const emptyWine = { name: "", origin: "", region: "", year: "", costPrice: "", price: "", promoPrice: "", stock: "", category: "Tinto", description: "", alcohol: "", grapes: "", img: null, keywords: "", harmonization: "" };
   const [newWine, setNewWine] = useState(emptyWine);
   const newImgRef = useRef();
   const editImgRef = useRef();
@@ -1452,6 +1430,26 @@ export default function App() {
           <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>Descrição</label>
           <textarea value={obj.description ?? ""} onChange={(e) => setObj((p) => ({ ...p, description: e.target.value }))} rows={3}
             style={{ width: "100%", background: "#120e0c", border: "1px solid #2a1f1f", borderRadius: 4, padding: "9px 11px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif", resize: "vertical" }} />
+        </div>
+        {/* Harmonização personalizada */}
+        <div style={{ gridColumn: "1/-1" }}>
+          <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>
+            🍽️ Sugestões de Harmonização <span style={{ color: "#8b6060", fontSize: 8 }}>— separe por vírgula (ex: Carnes vermelhas, Queijos curados)</span>
+          </label>
+          <textarea value={obj.harmonization ?? ""} onChange={(e) => setObj((p) => ({ ...p, harmonization: e.target.value }))} rows={2}
+            placeholder="Ex: 🥩 Carnes vermelhas, 🧀 Queijos curados, 🍄 Cogumelos"
+            style={{ width: "100%", background: "#120e0c", border: "1px solid #2a1f1f", borderRadius: 4, padding: "9px 11px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif", resize: "vertical" }} />
+          <div style={{ fontSize: 9, color: "#3a2a2a", marginTop: 3 }}>Se vazio, usa as sugestões padrão da categoria ({obj.category}).</div>
+        </div>
+        {/* Palavras-chave SEO */}
+        <div style={{ gridColumn: "1/-1" }}>
+          <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>
+            🔍 Palavras-chave (SEO) <span style={{ color: "#8b6060", fontSize: 8 }}>— ajudam o produto a aparecer no Google</span>
+          </label>
+          <input type="text" value={obj.keywords ?? ""} onChange={(e) => setObj((p) => ({ ...p, keywords: e.target.value }))}
+            placeholder="Ex: vinho tinto francês, bordeaux, presente para sommelier"
+            style={{ width: "100%", background: "#120e0c", border: "1px solid #2a1f1f", borderRadius: 4, padding: "9px 11px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif" }} />
+          <div style={{ fontSize: 9, color: "#3a2a2a", marginTop: 3 }}>Separe por vírgula. Essas palavras ficam invisíveis na página mas são lidas pelo Google.</div>
         </div>
         {/* Imagem */}
         <div style={{ gridColumn: "1/-1" }}>
@@ -1613,6 +1611,22 @@ export default function App() {
     const t = setTimeout(() => setCatalogLoading(false), 380);
     return () => clearTimeout(t);
   }, [filter, search, sortBy, priceRange[0], priceRange[1]]);
+
+  // SEO: update title and keywords meta when product is selected
+  useEffect(() => {
+    if (selectedWine) {
+      document.title = `${selectedWine.name} ${selectedWine.year ? '(' + selectedWine.year + ')' : ''} — Vinhos9`;
+      let meta = document.querySelector('meta[name="keywords"]');
+      if (!meta) { meta = document.createElement('meta'); meta.name = "keywords"; document.head.appendChild(meta); }
+      const kw = [selectedWine.name, selectedWine.origin, selectedWine.region, selectedWine.category, selectedWine.grapes, selectedWine.keywords].filter(Boolean).join(', ');
+      meta.content = kw;
+      let desc = document.querySelector('meta[name="description"]');
+      if (!desc) { desc = document.createElement('meta'); desc.name = "description"; document.head.appendChild(desc); }
+      desc.content = selectedWine.description || `${selectedWine.name} — ${selectedWine.category} de ${selectedWine.origin}. Disponível na Vinhos9.`;
+    } else {
+      document.title = "Vinhos9 — Vinhos Importados de Excelência";
+    }
+  }, [selectedWine]);
   const relatedWines = selectedWine ? (() => {
     const sameCategory = wines.filter((w) => w.category === selectedWine.category && w.id !== selectedWine.id);
     if (sameCategory.length >= 3) return sameCategory;
@@ -1658,7 +1672,10 @@ export default function App() {
           .filters-row{flex-direction:column!important;gap:10px!important}
           .cat-btns{flex-wrap:wrap!important;gap:6px!important}
           .adm-layout{flex-direction:column!important}
-          .adm-sidebar{width:100%!important;flex-direction:row!important;display:flex!important;overflow-x:auto!important;padding:6px!important;border-right:none!important;border-bottom:1px solid #2a1f1f!important;position:static!important}
+          .adm-sidebar{width:100%!important;flex-direction:row!important;display:flex!important;overflow-x:auto!important;padding:0!important;border-right:none!important;border-bottom:1px solid #2a1f1f!important;position:static!important;align-items:center!important}
+          .adm-sidebar>div:first-child{display:none!important}
+          .adm-sidebar>div.adm-tabs-wrap{display:contents!important;flex:1!important}
+          .adm-sidebar>div.adm-sair-wrap{flex-shrink:0!important;padding:4px 8px!important;border-left:1px solid #2a1f1f!important}
           .adm-sidebar button{white-space:nowrap!important;border-left:none!important;border-bottom:3px solid transparent!important;padding:10px 12px!important}
           .adm-content{padding:16px 12px!important}
           .kpi-grid{grid-template-columns:repeat(2,1fr)!important}
@@ -1730,19 +1747,28 @@ export default function App() {
         <main style={{ animation: "fadeIn .4s ease" }}>
 
           {/* Hero */}
-          <div className="hero-sec" style={{ position: "relative", height: 390, background: "linear-gradient(135deg,#1a0505 0%,#2d0f0f 40%,#1a0a05 100%)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-            <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at 60% 50%,rgba(139,44,44,.25) 0%,transparent 70%)" }} />
-            <div style={{ position: "absolute", top: 20, right: 60, fontSize: 130, opacity: .06, transform: "rotate(15deg)" }}>🍷</div>
-            <div style={{ textAlign: "center", position: "relative", zIndex: 2, padding: "0 20px" }}>
-              <p style={{ fontSize: 10, letterSpacing: 6, color: "#8b6060", textTransform: "uppercase", marginBottom: 12 }}>{heroBanner.tag}</p>
-              <h1 className="hero-title" style={{ fontSize: 48, fontWeight: "bold", color: "#f5f0e8", lineHeight: 1.1, marginBottom: 12, textShadow: "0 2px 40px rgba(139,44,44,.5)" }}>{heroBanner.title}<br /><span style={{ color: "#e8b4b4" }}>{heroBanner.titleAccent}</span></h1>
-              <p style={{ color: "#a09080", fontSize: 14, maxWidth: 420, margin: "0 auto 24px", lineHeight: 1.7 }}>{heroBanner.subtitle}</p>
-              <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-                <button className="btn-red" onClick={() => document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth" })} style={{ padding: "11px 28px", borderRadius: 4, fontSize: 11, letterSpacing: 2, textTransform: "uppercase" }}>{heroBanner.ctaLabel}</button>
-                {promoWines.length > 0 && <button onClick={() => document.getElementById("promocoes")?.scrollIntoView({ behavior: "smooth" })} style={{ padding: "11px 28px", borderRadius: 4, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", background: "transparent", border: "1px solid #b45309", color: "#fbbf24", cursor: "pointer", fontFamily: "Georgia,serif" }}>🏷 Ver Promoções</button>}
+          {(() => {
+            const isMobile = window.innerWidth < 768;
+            const heroBg = (isMobile && heroBanner.imgMobile) ? heroBanner.imgMobile : heroBanner.imgDesktop;
+            const heroStyle = heroBg
+              ? { position: "relative", height: 390, backgroundImage: `url(${heroBg})`, backgroundSize: "cover", backgroundPosition: "center", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }
+              : { position: "relative", height: 390, background: "linear-gradient(135deg,#1a0505 0%,#2d0f0f 40%,#1a0a05 100%)", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" };
+            return (
+              <div className="hero-sec" style={heroStyle}>
+                <div style={{ position: "absolute", inset: 0, background: heroBg ? "rgba(0,0,0,0.5)" : "radial-gradient(ellipse at 60% 50%,rgba(139,44,44,.25) 0%,transparent 70%)" }} />
+                {!heroBg && <div style={{ position: "absolute", top: 20, right: 60, fontSize: 130, opacity: .06, transform: "rotate(15deg)" }}>🍷</div>}
+                <div style={{ textAlign: "center", position: "relative", zIndex: 2, padding: "0 20px" }}>
+                  <p style={{ fontSize: 10, letterSpacing: 6, color: "#8b6060", textTransform: "uppercase", marginBottom: 12 }}>{heroBanner.tag}</p>
+                  <h1 className="hero-title" style={{ fontSize: 48, fontWeight: "bold", color: "#f5f0e8", lineHeight: 1.1, marginBottom: 12, textShadow: "0 2px 40px rgba(139,44,44,.5)" }}>{heroBanner.title}<br /><span style={{ color: "#e8b4b4" }}>{heroBanner.titleAccent}</span></h1>
+                  <p style={{ color: "#a09080", fontSize: 14, maxWidth: 420, margin: "0 auto 24px", lineHeight: 1.7 }}>{heroBanner.subtitle}</p>
+                  <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+                    <button className="btn-red" onClick={() => document.getElementById("catalog")?.scrollIntoView({ behavior: "smooth" })} style={{ padding: "11px 28px", borderRadius: 4, fontSize: 11, letterSpacing: 2, textTransform: "uppercase" }}>{heroBanner.ctaLabel}</button>
+                    {promoWines.length > 0 && <button onClick={() => document.getElementById("promocoes")?.scrollIntoView({ behavior: "smooth" })} style={{ padding: "11px 28px", borderRadius: 4, fontSize: 11, letterSpacing: 2, textTransform: "uppercase", background: "transparent", border: "1px solid #b45309", color: "#fbbf24", cursor: "pointer", fontFamily: "Georgia,serif" }}>🏷 Ver Promoções</button>}
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* Banners Dinâmicos */}
           {banners.filter(b => b.active).length > 0 && (
@@ -2007,7 +2033,10 @@ export default function App() {
                   <div style={{ fontSize: 9, letterSpacing: 3, color: "#8b6060", textTransform: "uppercase", marginBottom: 10 }}>🍽 Harmonização</div>
                   <p style={{ fontSize: 11, color: "#5a4a4a", marginBottom: 12 }}>Este {selectedWine.category.toLowerCase()} combina com:</p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                    {(HARMONIZATION[selectedWine.category] || []).map(item => (
+                    {(selectedWine.harmonization
+                      ? selectedWine.harmonization.split(",").map(s => s.trim()).filter(Boolean)
+                      : (HARMONIZATION[selectedWine.category] || [])
+                    ).map(item => (
                       <span key={item} style={{ background: "#1a1410", border: "1px solid #2a1f1f", borderRadius: 20, padding: "5px 12px", fontSize: 12, color: "#e8b4b4" }}>{item}</span>
                     ))}
                   </div>
@@ -2425,11 +2454,12 @@ export default function App() {
       {/* ── ADM PAINEL ── */}
       {page === "admin" && isLoggedIn && (
         <div className="adm-layout" style={{ display: "flex", minHeight: "calc(100vh - 62px)", animation: "fadeIn .4s ease" }}>
-          <aside className="adm-sidebar" style={{ width: 200, background: "#100c0c", borderRight: "1px solid #2a1f1f", padding: "24px 0", position: "relative" }}>
+          <aside className="adm-sidebar" style={{ width: 200, background: "#100c0c", borderRight: "1px solid #2a1f1f", padding: "24px 0", display: "flex", flexDirection: "column" }}>
             <div style={{ padding: "0 18px 18px", borderBottom: "1px solid #1a1410" }}>
               <div style={{ fontSize: 8, letterSpacing: 3, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 3 }}>Painel</div>
               <div style={{ fontSize: 12, color: "#e8b4b4" }}>Administração</div>
             </div>
+            <div style={{ flex: 1, overflowX: "auto", overflowY: "auto", display: "flex", flexDirection: "column" }} className="adm-tabs-wrap">
             {[["dashboard","📊","Dashboard"],["wines","🍷","Vinhos"],["add","➕","Cadastrar"],["csv","📥","Importar CSV"],["banners","🎨","Banners"],["promos","🏷","Promoções"],["orders","📦","Pedidos"],["reviews","⭐","Avaliações"],["pagamento","💳","Pagamento"],["supabase","🗄️","Banco de Dados"],["seguranca","🔐","Segurança"]].map(([tab, icon, label]) => (
               <button key={tab} className="adm-tab" onClick={() => setAdminTab(tab)} style={{ width: "100%", padding: "12px 18px", display: "flex", alignItems: "center", gap: 9, background: adminTab === tab ? "rgba(139,44,44,.3)" : "transparent", border: "none", color: adminTab === tab ? "#e8b4b4" : "#7a6a6a", cursor: "pointer", fontSize: 12, fontFamily: "Georgia,serif", textAlign: "left", borderLeft: adminTab === tab ? "3px solid #8b2c2c" : "3px solid transparent", transition: "all .2s" }}>
                 {icon} {label}
@@ -2437,7 +2467,8 @@ export default function App() {
                 {tab === "reviews" && reviews.filter(r => !r.approved).length > 0 && <span style={{ background: "#8b2c2c", color: "#fca5a5", fontSize: 9, padding: "1px 6px", borderRadius: 10, marginLeft: "auto" }}>{reviews.filter(r => !r.approved).length}</span>}
               </button>
             ))}
-            <div style={{ position: "absolute", bottom: 20, left: 0, right: 0, padding: "0 18px" }}>
+            </div>
+            <div style={{ padding: "14px 18px", borderTop: "1px solid #1a1410", marginTop: "auto" }} className="adm-sair-wrap">
               <button className="btn-ghost" onClick={() => { setIsLoggedIn(false); setLoginUser(""); setLoginPass(""); }} style={{ width: "100%", padding: "9px", borderRadius: 4, fontSize: 10, letterSpacing: 1 }}>🚪 Sair</button>
             </div>
           </aside>
@@ -2541,6 +2572,7 @@ export default function App() {
                             <div style={{ display: "flex", gap: 5 }}>
                               <button onClick={() => setEditWine({ ...w })} style={{ background: "none", border: "1px solid #2a3a2a", color: "#4ade80", padding: "3px 9px", borderRadius: 4, cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>Editar</button>
                               <button onClick={() => handleDeleteWine(w.id)} style={{ background: "none", border: "1px solid #3a1f1f", color: "#ef4444", padding: "3px 9px", borderRadius: 4, cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>Remover</button>
+                              <button onClick={() => { const url = window.location.href.split('?')[0] + '?produto=' + encodeURIComponent(w.id); window.open(url, '_blank'); }} style={{ background: "none", border: "1px solid #2a2a3a", color: "#a0a0e8", padding: "3px 9px", borderRadius: 4, cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>👁 Ver</button>
                             </div>
                           </td>
                         </tr>
@@ -2615,6 +2647,40 @@ export default function App() {
                     style={{ marginTop: 14, padding: "7px 16px", background: "none", border: "1px solid #2a1f1f", borderRadius: 4, color: "#5a4a4a", cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>
                     ↺ Restaurar padrão
                   </button>
+
+                  {/* Hero Background Images */}
+                  <div style={{ marginTop: 20, borderTop: "1px solid #2a1f1f", paddingTop: 18 }}>
+                    <div style={{ fontSize: 10, letterSpacing: 2, color: "#8b6060", textTransform: "uppercase", marginBottom: 14 }}>🖼 Imagem de Fundo do Banner</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                      {/* Desktop */}
+                      <div style={{ background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 8, padding: 14 }}>
+                        <div style={{ fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 8 }}>🖥 Desktop</div>
+                        <div style={{ fontSize: 9, color: "#3a2a2a", marginBottom: 10 }}>Recomendado: <strong style={{ color: "#8b6060" }}>1920 × 600 px</strong> · JPG ou WebP</div>
+                        {heroBanner.imgDesktop ? (
+                          <div style={{ position: "relative", marginBottom: 8 }}>
+                            <img src={heroBanner.imgDesktop} alt="bg desktop" style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 5, border: "1px solid #3a2a2a" }} />
+                            <button onClick={() => setHeroBanner(p => ({ ...p, imgDesktop: null }))} style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,.7)", border: "none", color: "#ef4444", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                          </div>
+                        ) : <div style={{ width: "100%", height: 60, background: "#1a1410", borderRadius: 5, border: "1px dashed #2a1f1f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#3a2a2a", marginBottom: 8 }}>sem imagem — usa gradiente</div>}
+                        <input type="file" accept="image/*" id="heroDesktopInput" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => setHeroBanner(p => ({ ...p, imgDesktop: ev.target.result })); r.readAsDataURL(f); }} />
+                        <button onClick={() => document.getElementById('heroDesktopInput').click()} style={{ width: "100%", padding: "7px", background: "#1a1410", border: "1px solid #3a2f2f", color: "#e8b4b4", borderRadius: 4, cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>📷 Enviar imagem desktop</button>
+                      </div>
+                      {/* Mobile */}
+                      <div style={{ background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 8, padding: 14 }}>
+                        <div style={{ fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 8 }}>📱 Mobile</div>
+                        <div style={{ fontSize: 9, color: "#3a2a2a", marginBottom: 10 }}>Recomendado: <strong style={{ color: "#8b6060" }}>768 × 500 px</strong> · JPG ou WebP</div>
+                        {heroBanner.imgMobile ? (
+                          <div style={{ position: "relative", marginBottom: 8 }}>
+                            <img src={heroBanner.imgMobile} alt="bg mobile" style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 5, border: "1px solid #3a2a2a" }} />
+                            <button onClick={() => setHeroBanner(p => ({ ...p, imgMobile: null }))} style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,.7)", border: "none", color: "#ef4444", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+                          </div>
+                        ) : <div style={{ width: "100%", height: 60, background: "#1a1410", borderRadius: 5, border: "1px dashed #2a1f1f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#3a2a2a", marginBottom: 8 }}>usa a imagem desktop</div>}
+                        <input type="file" accept="image/*" id="heroMobileInput" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => setHeroBanner(p => ({ ...p, imgMobile: ev.target.result })); r.readAsDataURL(f); }} />
+                        <button onClick={() => document.getElementById('heroMobileInput').click()} style={{ width: "100%", padding: "7px", background: "#1a1410", border: "1px solid #3a2f2f", color: "#e8b4b4", borderRadius: 4, cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>📷 Enviar imagem mobile</button>
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 9, color: "#3a2a2a", marginTop: 10 }}>💡 Se não enviar imagem mobile, o site usa automaticamente a imagem desktop no celular.</div>
+                  </div>
                 </div>
 
                 {/* Destaques */}
