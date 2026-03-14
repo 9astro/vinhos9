@@ -3143,6 +3143,12 @@ export default function App() {
         @keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
         .wine-card{transition:all .3s ease;cursor:pointer}
         .wine-card:hover{transform:translateY(-6px);box-shadow:0 20px 60px rgba(139,44,44,.35)!important}
+        .wine-card .wc-name{font-size:14px;color:#f5f0e8;font-weight:bold}
+        .wine-card .wc-origin{font-size:11px;color:#7a6a6a}
+        .wine-card .wc-desc{font-size:11px;color:#7a6a6a;line-height:1.5}
+        .wine-card .wc-price{font-size:17px;font-weight:bold}
+        .wine-card .wc-old-price{font-size:10px;color:#5a4a4a;text-decoration:line-through}
+        .wine-card .wc-stock{font-size:9px;color:#5a4a4a}
         .btn-red{background:#8b2c2c;border:none;color:#fff;cursor:pointer;font-family:Georgia,serif;transition:background .2s;font-size:14px!important}
         .btn-red:hover{background:#a83232!important}
         .btn-ghost{background:transparent;border:1px solid #2a1f1f;color:#8a7a7a;cursor:pointer;font-family:Georgia,serif;transition:all .2s;font-size:14px!important}
@@ -3169,39 +3175,85 @@ export default function App() {
         .adm-sidebar button{font-size:13px!important;color:#c0a8a8!important}
         .adm-sidebar button[style*="color:#e8b4b4"]{color:#e8b4b4!important}
 
+        /* ── MOBILE: cores claras via variável customizada ── */
         @media(max-width:768px){
-          /* ── MOBILE: fontes maiores ── */
-          body,html{font-size:15px}
+          :root{
+            --txt-dim: #b0a0a0;
+            --txt-muted: #a09090;
+            --txt-faint: #888080;
+          }
+        }
+
+        @media(max-width:768px){
+          /* ── MOBILE: fontes maiores e textos mais claros ── */
+          body,html{font-size:16px}
+
+          /* Clarear todas as cores de texto escuras no mobile */
+          [style*="color: #5a4a4a"],[style*="color:#5a4a4a"]{color:#9a8a8a!important}
+          [style*="color: #7a6a6a"],[style*="color:#7a6a6a"]{color:#b0a0a0!important}
+          [style*="color: #a09080"],[style*="color:#a09080"]{color:#c8b8b0!important}
+          [style*="color: #3a2a2a"],[style*="color:#3a2a2a"]{color:#8a7a7a!important}
+          [style*="color: #4a3a3a"],[style*="color:#4a3a3a"]{color:#9a8a8a!important}
+          [style*="color: #8b6060"],[style*="color:#8b6060"]{color:#c09090!important}
+
           .desktop-nav{display:none!important}
           .mobile-nav{display:flex!important}
-          .hero-title{font-size:30px!important}
-          .hero-sec{height:300px!important}
-          .catalog-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))!important;gap:14px!important}
+          .hero-title{font-size:28px!important}
+          .hero-sec{height:280px!important}
+
+          /* Catálogo mobile — cards maiores com fonte legível */
+          .catalog-grid{grid-template-columns:repeat(2,1fr)!important;gap:12px!important}
           .home-grid{grid-template-columns:repeat(2,1fr)!important;gap:12px!important}
-          .cat-pad{padding:18px 16px 0!important}
+          .cat-pad{padding:16px 14px 0!important}
           .filters-row{flex-direction:column!important;gap:10px!important}
           .cat-btns{flex-wrap:wrap!important;gap:8px!important}
+
+          /* Botões */
+          .btn-red,.btn-ghost{font-size:15px!important;padding:11px 18px!important}
+          .nav-link{font-size:15px!important}
+          input,select,textarea{font-size:16px!important}
+
+          /* Textos globais no mobile */
+          p{font-size:14px!important;color:#c8b8b0!important;line-height:1.7!important}
+          h1{font-size:22px!important;color:#f5f0e8!important}
+          h2{font-size:19px!important;color:#f0e8e8!important}
+          h3{font-size:17px!important}
+          label{font-size:13px!important;color:#c0b0b0!important}
+          span{color:inherit}
+
+          /* Cards de vinho — nome, origem, preço mais legíveis */
+          .wine-card h3{font-size:14px!important;color:#f5f0e8!important}
+          .wine-card .wc-name{font-size:14px!important;color:#f0e8e8!important}
+          .wine-card .wc-origin{font-size:12px!important;color:#b0a0a0!important}
+          .wine-card .wc-desc{font-size:12px!important;color:#a09090!important}
+          .wine-card .wc-price{font-size:18px!important}
+          .wine-card .wc-old-price{font-size:11px!important;color:#8a7a7a!important}
+          .wine-card .wc-stock{font-size:11px!important;color:#a09090!important}
+
+          /* Textos gerais de apoio — clarear no mobile */
+          .txt-muted{color:#b0a0a0!important;font-size:13px!important}
+          .txt-dim{color:#a09090!important}
+          .txt-faint{color:#888080!important}
+
+          /* ADM */
           .adm-layout{flex-direction:column!important}
           .adm-sidebar{width:100%!important;flex-direction:row!important;display:flex!important;overflow-x:auto!important;padding:0!important;border-right:none!important;border-bottom:1px solid #2a1f1f!important;position:static!important;align-items:center!important}
           .adm-sidebar>div:first-child{display:none!important}
           .adm-sidebar>div.adm-tabs-wrap{display:contents!important;flex:1!important}
           .adm-sidebar>div.adm-sair-wrap{flex-shrink:0!important;padding:4px 8px!important;border-left:1px solid #2a1f1f!important}
           .adm-sidebar button{white-space:nowrap!important;border-left:none!important;border-bottom:3px solid transparent!important;padding:12px 14px!important;font-size:14px!important}
-          .adm-content{padding:18px 14px!important;font-size:15px!important}
+          .adm-content{padding:16px 12px!important;font-size:15px!important}
           .kpi-grid{grid-template-columns:repeat(2,1fr)!important}
           .form-grid{grid-template-columns:1fr!important}
-          @media(min-width:480px) and (max-width:768px){
-            .form-grid{grid-template-columns:1fr 1fr!important}
-          }
           .tbl{font-size:13px!important}
           .tbl td,.tbl th{padding:10px 10px!important}
           .detail-flex{flex-direction:column!important}
           .detail-img{width:100%!important;flexShrink:unset!important}
           .cart-panel{width:100%!important}
           .promo-banner{flex-direction:column!important;gap:12px!important}
-          input,select,textarea{font-size:16px!important}
-          .btn-red,.btn-ghost{font-size:15px!important;padding:12px 20px!important}
-          .nav-link{font-size:16px!important}
+        }
+        @media(min-width:480px) and (max-width:768px){
+          .form-grid{grid-template-columns:1fr 1fr!important}
         }
       `}</style>
 
@@ -3519,16 +3571,16 @@ export default function App() {
                       </div>
                     </div>
                     <div style={{ padding: "14px 14px 16px" }}>
-                      <h3 style={{ fontSize: 14, color: "#f5f0e8", marginBottom: 4 }}>{wine.name}</h3>
+                      <h3 className="wc-name" style={{ fontSize: 14, color: "#f5f0e8", marginBottom: 4 }}>{wine.name}</h3>
                       <div style={{ marginBottom: 6 }}><Stars rating={wine.rating} /></div>
-                      <p style={{ fontSize: 11, color: "#7a6a6a", lineHeight: 1.5, marginBottom: 8, minHeight: 34 }}>{wine.description?.slice(0, 70)}…</p>
+                      <p className="wc-desc" style={{ fontSize: 11, color: "#7a6a6a", lineHeight: 1.5, marginBottom: 8, minHeight: 34 }}>{wine.description?.slice(0, 70)}…</p>
                       {/* Low stock badge */}
                       {wine.stock <= 3 && <div style={{ marginBottom: 8 }}><LowStockBadge stock={wine.stock} /></div>}
                       <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 }}>
-                        <span style={{ fontSize: 17, color: wine.promoPrice ? "#fbbf24" : "#e8b4b4", fontWeight: "bold" }}>{fmt(activePrice)}</span>
-                        {wine.promoPrice && <span style={{ fontSize: 10, color: "#5a4a4a", textDecoration: "line-through" }}>{fmt(wine.price)}</span>}
+                        <span className="wc-price" style={{ fontSize: 17, color: wine.promoPrice ? "#fbbf24" : "#e8b4b4", fontWeight: "bold" }}>{fmt(activePrice)}</span>
+                        {wine.promoPrice && <span className="wc-old-price" style={{ fontSize: 10, color: "#5a4a4a", textDecoration: "line-through" }}>{fmt(wine.price)}</span>}
                       </div>
-                      <div style={{ fontSize: 9, color: "#5a4a4a", marginBottom: 12 }}>{wine.stock > 0 ? `${wine.stock} em estoque` : ""}</div>
+                      <div className="wc-stock" style={{ fontSize: 9, color: "#5a4a4a", marginBottom: 12 }}>{wine.stock > 0 ? `${wine.stock} em estoque` : ""}</div>
                       <button className="btn-red" onClick={(e) => { e.stopPropagation(); addToCart(wine); }} disabled={wine.stock === 0}
                         style={{ width: "100%", padding: "10px", borderRadius: 4, fontSize: 11, letterSpacing: 1, background: wine.stock === 0 ? "#2a1f1f" : "#8b2c2c", color: wine.stock === 0 ? "#5a4a4a" : "#fff", cursor: wine.stock === 0 ? "not-allowed" : "pointer" }}>
                         {wine.stock === 0 ? "Esgotado" : "🛒 Adicionar ao Carrinho"}
