@@ -294,7 +294,7 @@ const ImageZoomModal = ({ wine, onClose }) => {
 };
 
 // ── Carrossel ────────────────────────────────────────────────────────────────
-const Carousel = ({ items, onSelect, title, subtitle, accentColor = "#e8b4b4", autoPlay = true, visibleDesktop = 4 }) => {
+const Carousel = ({ items, onSelect, title, subtitle, accentColor = "#e8b4b4", autoPlay = true, visibleDesktop = 4, fadeMode = false }) => {
   const [winWidth, setWinWidth] = useState(typeof window !== "undefined" ? window.innerWidth : 1024);
   useEffect(() => {
     const onResize = () => setWinWidth(window.innerWidth);
@@ -303,7 +303,7 @@ const Carousel = ({ items, onSelect, title, subtitle, accentColor = "#e8b4b4", a
   }, []);
   const VISIBLE = winWidth <= 768 ? 2 : visibleDesktop;
   const [index, setIndex] = useState(0);
-  const [animDir, setAnimDir] = useState(null); // 'left' | 'right' | null
+  const [animDir, setAnimDir] = useState(null);
   const [animating, setAnimating] = useState(false);
   const timerRef = useRef(null);
   const pausedRef = useRef(false);
@@ -315,6 +315,7 @@ const Carousel = ({ items, onSelect, title, subtitle, accentColor = "#e8b4b4", a
     if (animating || total <= VISIBLE) return;
     setAnimDir(dir);
     setAnimating(true);
+    const duration = fadeMode ? 280 : 320;
     setTimeout(() => {
       setIndex((prev) => {
         if (dir === "right") return prev >= maxIndex ? 0 : prev + 1;
@@ -322,21 +323,18 @@ const Carousel = ({ items, onSelect, title, subtitle, accentColor = "#e8b4b4", a
       });
       setAnimating(false);
       setAnimDir(null);
-    }, 320);
-  }, [animating, maxIndex, total]);
+    }, duration);
+  }, [animating, maxIndex, total, fadeMode]);
 
   const startTimer = useCallback(() => {
     if (!autoPlay) return;
     clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
       if (!pausedRef.current) go("right");
-    }, 3200);
-  }, [autoPlay, go]);
+    }, fadeMode ? 3800 : 3200);
+  }, [autoPlay, go, fadeMode]);
 
-  useEffect(() => {
-    setIndex(0);
-  }, [items.length]);
-
+  useEffect(() => { setIndex(0); }, [items.length]);
   useEffect(() => {
     startTimer();
     return () => clearInterval(timerRef.current);
@@ -350,6 +348,26 @@ const Carousel = ({ items, onSelect, title, subtitle, accentColor = "#e8b4b4", a
 
   const dotCount = Math.max(1, total - VISIBLE + 1);
 
+  // Animação: fadeMode usa opacity pura, slide usa translateX
+  const trackStyle = fadeMode
+    ? {
+        display: "grid",
+        gridTemplateColumns: `repeat(${Math.min(VISIBLE, total)}, 1fr)`,
+        gap: 14,
+        transition: animating ? "opacity .28s ease" : "none",
+        opacity: animating ? 0 : 1,
+      }
+    : {
+        display: "grid",
+        gridTemplateColumns: `repeat(${Math.min(VISIBLE, total)}, 1fr)`,
+        gap: 14,
+        transition: animating ? "opacity .32s ease, transform .32s ease" : "none",
+        opacity: animating ? 0.5 : 1,
+        transform: animating
+          ? `translateX(${animDir === "right" ? "-18px" : "18px"})`
+          : "translateX(0)",
+      };
+
   return (
     <div style={{ marginTop: 52, paddingTop: 32, borderTop: "1px solid #2a1f1f" }}
       onMouseEnter={() => { pausedRef.current = true; }}
@@ -362,11 +380,20 @@ const Carousel = ({ items, onSelect, title, subtitle, accentColor = "#e8b4b4", a
         </div>
         {total > VISIBLE && (
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            {/* Dots */}
-            <div style={{ display: "flex", gap: 6 }}>
+            {/* Dots — fadeMode usa círculos sólidos, slide usa pill */}
+            <div style={{ display: "flex", gap: fadeMode ? 7 : 6 }}>
               {Array.from({ length: dotCount }).map((_, i) => (
                 <button key={i} onClick={() => { if (!animating) setIndex(i); }}
-                  style={{ width: i === index ? 20 : 7, height: 7, borderRadius: 4, border: "none", background: i === index ? accentColor : "#2a1f1f", cursor: "pointer", transition: "all .3s ease", padding: 0 }} />
+                  style={{
+                    width: fadeMode ? 9 : (i === index ? 20 : 7),
+                    height: fadeMode ? 9 : 7,
+                    borderRadius: fadeMode ? "50%" : 4,
+                    border: fadeMode ? `2px solid ${i === index ? accentColor : "#4a3a3a"}` : "none",
+                    background: i === index ? accentColor : (fadeMode ? "transparent" : "#2a1f1f"),
+                    cursor: "pointer",
+                    transition: "all .3s ease",
+                    padding: 0,
+                  }} />
               ))}
             </div>
             {/* Arrows */}
@@ -388,16 +415,7 @@ const Carousel = ({ items, onSelect, title, subtitle, accentColor = "#e8b4b4", a
 
       {/* Track */}
       <div style={{ overflow: "hidden", position: "relative" }}>
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: `repeat(${Math.min(VISIBLE, total)}, 1fr)`,
-          gap: 14,
-          transition: animating ? "opacity .32s ease, transform .32s ease" : "none",
-          opacity: animating ? 0.5 : 1,
-          transform: animating
-            ? `translateX(${animDir === "right" ? "-18px" : "18px"})`
-            : "translateX(0)",
-        }}>
+        <div style={trackStyle}>
           {visibleItems.map((wine) => {
             const activePrice = wine.promoPrice || wine.price;
             return (
@@ -847,7 +865,20 @@ const ClientAccountPanel = ({ wines, addToCart, setSelectedWine, setPage, onClos
     } catch { return null; }
   });
 
-  const saveClient = (c) => { setClient(c); try { localStorage.setItem("v9_client", JSON.stringify(c)); } catch {} };
+  // 20: saveClient robusto — garante persistência no localStorage
+  const saveClient = (c) => {
+    setClient(c);
+    try {
+      if (c) {
+        localStorage.setItem("v9_client", JSON.stringify(c));
+        // Também atualiza no banco de clientes
+        const all = JSON.parse(localStorage.getItem("v9_clients_db") || "{}");
+        if (c.id) { all[c.id] = c; localStorage.setItem("v9_clients_db", JSON.stringify(all)); }
+      } else {
+        localStorage.removeItem("v9_client");
+      }
+    } catch {}
+  };
 
   const tierColor = { Gold: "#fbbf24", Silver: "#c0c0c0", Bronze: "#cd7f32" }[client?.tier] || "#e8b4b4";
   const wishlistWines = wines.filter(w => wishlist.includes(w.id));
@@ -857,17 +888,53 @@ const ClientAccountPanel = ({ wines, addToCart, setSelectedWine, setPage, onClos
 
   const handleLogin = () => {
     if (!loginEmail || !loginPwd) { setAuthError("Preencha e-mail e senha."); return; }
+    // 24: Rate limiting simples — bloquear após 5 tentativas
     try {
+      const attempts = JSON.parse(sessionStorage.getItem("v9_login_attempts") || '{"count":0,"until":0}');
+      if (Date.now() < attempts.until) {
+        const secs = Math.ceil((attempts.until - Date.now()) / 1000);
+        setAuthError(`Muitas tentativas. Aguarde ${secs}s antes de tentar novamente.`); return;
+      }
       const all = JSON.parse(localStorage.getItem("v9_clients_db") || "{}");
       const found = Object.values(all).find(c => c.email === loginEmail && c.pwd === loginPwd);
-      if (found) { saveClient(found); setAuthMode("loggedin"); setAuthError(""); }
-      else setAuthError("E-mail ou senha incorretos.");
+      if (found) {
+        sessionStorage.removeItem("v9_login_attempts");
+        saveClient(found); setAuthMode("loggedin"); setAuthError("");
+      } else {
+        const newCount = (attempts.count || 0) + 1;
+        const newUntil = newCount >= 5 ? Date.now() + 60000 : 0;
+        sessionStorage.setItem("v9_login_attempts", JSON.stringify({ count: newCount, until: newUntil }));
+        const rem = 5 - newCount;
+        setAuthError(rem > 0
+          ? `E-mail ou senha incorretos. ${rem} tentativa${rem > 1 ? "s" : ""} restante${rem > 1 ? "s" : ""}.`
+          : "Conta bloqueada por 60 segundos após muitas tentativas.");
+      }
     } catch { setAuthError("Erro ao fazer login."); }
   };
 
+  // 24+25+26: Validação forte de senha
+  const pwdRules = [
+    { test: (p) => p.length >= 8,                    label: "8 ou mais caracteres" },
+    { test: (p) => /[A-Z]/.test(p),                   label: "Uma letra maiúscula" },
+    { test: (p) => /[0-9]/.test(p),                   label: "Um número" },
+    { test: (p) => /[!@#$%^&*()\-_,.?|<>]/.test(p),  label: "Um caractere especial" },
+  ];
+  const pwdScore = pwdRules.filter(r => r.test(regPwd)).length;
+  const pwdColors = ["#ef4444", "#f87171", "#fbbf24", "#4ade80", "#22c55e"];
+  const pwdLabels = ["", "Fraca", "Média", "Forte", "Muito forte"];
+
   const handleRegister = () => {
     if (!regName || !regEmail || !regPwd) { setAuthError("Preencha todos os campos obrigatórios."); return; }
-    if (regPwd.length < 6) { setAuthError("A senha deve ter ao menos 6 caracteres."); return; }
+    // 24: Validação forte de senha
+    if (pwdScore < 3) { setAuthError("Senha muito fraca. " + pwdRules.filter(r => !r.test(regPwd)).map(r => r.label).join(", ") + "."); return; }
+    // 24: Validar formato de e-mail
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail)) { setAuthError("Informe um e-mail válido."); return; }
+    // 25: Verificar e-mail duplicado
+    try {
+      const all = JSON.parse(localStorage.getItem("v9_clients_db") || "{}");
+      const emailTaken = Object.values(all).some(c => c.email.toLowerCase() === regEmail.toLowerCase());
+      if (emailTaken) { setAuthError("Este e-mail já está cadastrado. Faça login ou use outro e-mail."); return; }
+    } catch {}
     const newClient = {
       id: `c_${Date.now()}`, name: regName, email: regEmail, pwd: regPwd, phone: regPhone,
       since: new Date().toLocaleDateString("pt-BR", { month: "long", year: "numeric" }),
@@ -882,7 +949,6 @@ const ClientAccountPanel = ({ wines, addToCart, setSelectedWine, setPage, onClos
     } catch {}
     saveClient(newClient);
     setAuthMode("loggedin"); setAuthError("");
-    // E-mail de boas-vindas
     sendEmail("boasVindas", { to_email: regEmail, to_name: regName, store_name: "Vinhos9", coupon_code: "BEMVINDO" });
   };
 
@@ -922,7 +988,11 @@ const ClientAccountPanel = ({ wines, addToCart, setSelectedWine, setPage, onClos
             </div>
             <div style={{ marginBottom: 14 }}>
               <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>E-mail</label>
-              <input value={loginEmail} onChange={e => setLoginEmail(e.target.value)} placeholder="seu@email.com" style={inputStyle} />
+              <input
+                value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
+                placeholder="seu@email.com"
+                style={{ ...inputStyle, borderColor: loginEmail.length > 4 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(loginEmail) ? "#ef4444" : "#2a1f1f" }}
+              />
             </div>
             <div style={{ marginBottom: 8 }}>
               <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>Senha</label>
@@ -931,10 +1001,22 @@ const ClientAccountPanel = ({ wines, addToCart, setSelectedWine, setPage, onClos
                 <button onClick={() => setShowPwd(!showPwd)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 13 }}>{showPwd ? "🙈" : "👁"}</button>
               </div>
             </div>
-            {authError && <div style={{ fontSize: 11, color: "#f87171", marginBottom: 8 }}>⚠ {authError}</div>}
+            {authError && (
+              <div style={{ fontSize: 11, color: "#f87171", marginBottom: 10, padding: "8px 12px", background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.2)", borderRadius: 6 }}>
+                ⚠ {authError}
+              </div>
+            )}
             <button onClick={handleLogin} style={{ width: "100%", padding: "13px", background: "#8b2c2c", border: "none", borderRadius: 4, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: "Georgia,serif", letterSpacing: 2, textTransform: "uppercase", marginBottom: 14 }}>
               Entrar
             </button>
+            {/* 24: Selos de segurança */}
+            <div style={{ display: "flex", justifyContent: "center", gap: 16, marginBottom: 16, flexWrap: "wrap" }}>
+              {[["🔒","SSL"],["🛡️","Seguro"],["🔐","Criptografado"]].map(([ic,lb]) => (
+                <div key={lb} style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10, color: "#3a2a2a" }}>
+                  <span>{ic}</span><span>{lb}</span>
+                </div>
+              ))}
+            </div>
             <div style={{ textAlign: "center" }}>
               <span style={{ fontSize: 12, color: "#5a4a4a" }}>Ainda não tem conta? </span>
               <button onClick={() => { setAuthMode("register"); setAuthError(""); }} style={{ background: "none", border: "none", color: "#e8b4b4", cursor: "pointer", fontSize: 12, fontFamily: "Georgia,serif", textDecoration: "underline" }}>Criar conta grátis</button>
@@ -953,9 +1035,10 @@ const ClientAccountPanel = ({ wines, addToCart, setSelectedWine, setPage, onClos
               </div>
               <button onClick={onClose} style={{ marginLeft: "auto", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 18 }}>✕</button>
             </div>
+
+            {/* Campos básicos */}
             {[
               ["Nome completo *", regName, setRegName, "text", "João da Silva"],
-              ["E-mail *", regEmail, setRegEmail, "email", "joao@email.com"],
               ["Telefone", regPhone, setRegPhone, "tel", "(11) 99999-0000"],
             ].map(([label, val, setter, type, ph]) => (
               <div key={label} style={{ marginBottom: 14 }}>
@@ -963,19 +1046,100 @@ const ClientAccountPanel = ({ wines, addToCart, setSelectedWine, setPage, onClos
                 <input type={type} value={val} onChange={e => setter(e.target.value)} placeholder={ph} style={inputStyle} />
               </div>
             ))}
-            <div style={{ marginBottom: 8 }}>
-              <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>Senha * <span style={{ color: "#3a2a2a" }}>(mín. 6 caracteres)</span></label>
+
+            {/* 25: E-mail com verificação de duplicado em tempo real */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>E-mail *</label>
               <div style={{ position: "relative" }}>
-                <input type={showPwd ? "text" : "password"} value={regPwd} onChange={e => setRegPwd(e.target.value)} placeholder="••••••••" style={{ ...inputStyle, paddingRight: 42 }} />
+                <input
+                  type="email" value={regEmail}
+                  onChange={e => setRegEmail(e.target.value)}
+                  placeholder="joao@email.com"
+                  style={{ ...inputStyle, paddingRight: 36,
+                    borderColor: regEmail.length > 4 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail)
+                      ? "#ef4444"
+                      : regEmail.length > 4 && (() => { try { return Object.values(JSON.parse(localStorage.getItem("v9_clients_db")||"{}")).some(c => c.email.toLowerCase() === regEmail.toLowerCase()); } catch { return false; } })()
+                      ? "#f87171"
+                      : regEmail.length > 4 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail) ? "#4ade80" : "#2a1f1f"
+                  }}
+                />
+                {regEmail.length > 4 && (
+                  <span style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", fontSize: 13 }}>
+                    {/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail)
+                      ? (() => { try { return Object.values(JSON.parse(localStorage.getItem("v9_clients_db")||"{}")).some(c => c.email.toLowerCase() === regEmail.toLowerCase()); } catch { return false; } })()
+                        ? "❌" : "✅"
+                      : "⚠️"
+                    }
+                  </span>
+                )}
+              </div>
+              {/* 25: Aviso de e-mail duplicado */}
+              {regEmail.length > 4 && (() => { try { return Object.values(JSON.parse(localStorage.getItem("v9_clients_db")||"{}")).some(c => c.email.toLowerCase() === regEmail.toLowerCase()); } catch { return false; } })() && (
+                <div style={{ fontSize: 11, color: "#f87171", marginTop: 5, display: "flex", alignItems: "center", gap: 5 }}>
+                  ⚠ E-mail já cadastrado.
+                  <button onClick={() => { setAuthMode("login"); setLoginEmail(regEmail); setAuthError(""); }}
+                    style={{ background: "none", border: "none", color: "#e8b4b4", cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif", textDecoration: "underline", padding: 0 }}>
+                    Fazer login?
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 24+26: Senha com indicador de força */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>Senha *</label>
+              <div style={{ position: "relative" }}>
+                <input type={showPwd ? "text" : "password"} value={regPwd}
+                  onChange={e => setRegPwd(e.target.value)} placeholder="••••••••"
+                  style={{ ...inputStyle, paddingRight: 42,
+                    borderColor: regPwd.length > 0 ? pwdColors[pwdScore] : "#2a1f1f" }} />
                 <button onClick={() => setShowPwd(!showPwd)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 13 }}>{showPwd ? "🙈" : "👁"}</button>
               </div>
+
+              {/* 26: Barra de força */}
+              {regPwd.length > 0 && (
+                <div style={{ marginTop: 10 }}>
+                  {/* Barra visual */}
+                  <div style={{ display: "flex", gap: 4, marginBottom: 6 }}>
+                    {[0,1,2,3].map(i => (
+                      <div key={i} style={{ flex: 1, height: 5, borderRadius: 3, background: i < pwdScore ? pwdColors[pwdScore] : "#2a1f1f", transition: "background .3s" }} />
+                    ))}
+                  </div>
+                  {/* Label de força */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, color: pwdColors[pwdScore], fontWeight: "bold" }}>
+                      {pwdLabels[pwdScore] || "Muito fraca"}
+                    </span>
+                    <span style={{ fontSize: 10, color: "#5a4a4a" }}>{pwdScore}/4 requisitos</span>
+                  </div>
+                  {/* Checklist de regras */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 8px" }}>
+                    {pwdRules.map(rule => {
+                      const ok = rule.test(regPwd);
+                      return (
+                        <div key={rule.label} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 10 }}>
+                          <span style={{ color: ok ? "#4ade80" : "#5a4a4a", fontSize: 11, flexShrink: 0 }}>{ok ? "✓" : "○"}</span>
+                          <span style={{ color: ok ? "#86efac" : "#5a4a4a" }}>{rule.label}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
-            {authError && <div style={{ fontSize: 11, color: "#f87171", marginBottom: 10 }}>⚠ {authError}</div>}
+
+            {authError && (
+              <div style={{ fontSize: 11, color: "#f87171", marginBottom: 12, padding: "9px 12px", background: "rgba(239,68,68,.08)", border: "1px solid rgba(239,68,68,.2)", borderRadius: 6 }}>
+                ⚠ {authError}
+              </div>
+            )}
             <div style={{ background: "rgba(139,44,44,.07)", border: "1px solid rgba(139,44,44,.2)", borderRadius: 6, padding: "10px 13px", marginBottom: 18, fontSize: 11, color: "#8b6060", lineHeight: 1.6 }}>
-              🎁 Ao criar sua conta você ganha <strong style={{ color: "#e8b4b4" }}>200 pontos</strong> de boas-vindas e acesso ao cupom <strong style={{ color: "#fbbf24" }}>BEMVINDO</strong> com 15% OFF.
+              🎁 Ganhe <strong style={{ color: "#e8b4b4" }}>200 pontos</strong> + cupom <strong style={{ color: "#fbbf24" }}>BEMVINDO</strong> com 15% OFF na primeira compra.
             </div>
-            <button onClick={handleRegister} style={{ width: "100%", padding: "13px", background: "#8b2c2c", border: "none", borderRadius: 4, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: "Georgia,serif", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12 }}>
-              Criar Minha Conta
+            <button onClick={handleRegister}
+              disabled={pwdScore < 3}
+              style={{ width: "100%", padding: "13px", background: pwdScore < 3 ? "#2a1f1f" : "#8b2c2c", border: "none", borderRadius: 4, color: pwdScore < 3 ? "#5a4a4a" : "#fff", cursor: pwdScore < 3 ? "not-allowed" : "pointer", fontSize: 12, fontFamily: "Georgia,serif", letterSpacing: 2, textTransform: "uppercase", marginBottom: 12, transition: "all .3s" }}>
+              {pwdScore < 3 ? `Senha muito fraca (${pwdScore}/4 req.)` : "Criar Minha Conta"}
             </button>
             <div style={{ textAlign: "center" }}>
               <span style={{ fontSize: 12, color: "#5a4a4a" }}>Já tem conta? </span>
@@ -1147,6 +1311,38 @@ const ClientAccountPanel = ({ wines, addToCart, setSelectedWine, setPage, onClos
                 style={{ marginTop: 8, width: "100%", padding: "11px", background: "none", border: "1px solid #2a1f1f", borderRadius: 4, color: "#7a6a6a", cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif", letterSpacing: 1 }}>
                 🚪 Sair da conta
               </button>
+              {/* Zona de perigo — deletar conta */}
+              <div style={{ marginTop: 24, padding: "18px", background: "rgba(127,29,29,.12)", border: "1px solid rgba(239,68,68,.25)", borderRadius: 10 }}>
+                <div style={{ fontSize: 12, color: "#fca5a5", fontWeight: "bold", marginBottom: 8 }}>⚠️ Zona de Perigo</div>
+                <p style={{ fontSize: 12, color: "#9a7a7a", lineHeight: 1.7, marginBottom: 14 }}>
+                  Ao excluir sua conta, <strong style={{ color: "#fca5a5" }}>todos os seus dados serão apagados permanentemente</strong>: histórico de pedidos, pontos, favoritos e cupons. Esta ação <strong style={{ color: "#fca5a5" }}>não pode ser desfeita</strong>.
+                </p>
+                <button onClick={() => {
+                  if (!window.confirm(
+                    "⚠️ ATENÇÃO — Excluir conta?\n\n" +
+                    "Isso irá apagar permanentemente:\n" +
+                    "• Todos os seus pedidos\n" +
+                    "• Seus pontos acumulados\n" +
+                    "• Sua lista de favoritos\n" +
+                    "• Seus cupons salvos\n\n" +
+                    "Esta ação NÃO pode ser desfeita.\n\n" +
+                    "Clique OK para confirmar a exclusão."
+                  )) return;
+                  try {
+                    const all = JSON.parse(localStorage.getItem("v9_clients_db") || "{}");
+                    if (client?.id) delete all[client.id];
+                    localStorage.setItem("v9_clients_db", JSON.stringify(all));
+                    localStorage.removeItem("v9_client");
+                    localStorage.removeItem("v9_wishlist");
+                  } catch {}
+                  saveClient(null);
+                  setAuthMode("login");
+                  setLoginEmail(""); setLoginPwd("");
+                }}
+                  style={{ width: "100%", padding: "11px", background: "#7f1d1d", border: "none", borderRadius: 4, color: "#fca5a5", cursor: "pointer", fontSize: 12, fontFamily: "Georgia,serif", letterSpacing: 1 }}>
+                  🗑️ Excluir Minha Conta Permanentemente
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -1157,6 +1353,246 @@ const ClientAccountPanel = ({ wines, addToCart, setSelectedWine, setPage, onClos
 };
 
 
+
+// ── CartFreteSelector — seleção de frete no carrinho com busca de CEP (ViaCEP) ─
+const CartFreteSelector = ({ freteConfig, cartTotal, freteEscolhido, setFreteEscolhido, onCepFill }) => {
+  const [cep, setCep] = useState("");
+  const [buscando, setBuscando] = useState(false);
+  const [cepOk, setCepOk] = useState(false);
+  const [cepErro, setCepErro] = useState("");
+  const opcoes = freteConfig?.opcoes || [];
+
+  const buscarCep = async (val) => {
+    const clean = val.replace(/\D/g,"");
+    if (clean.length !== 8) return;
+    setBuscando(true); setCepErro(""); setCepOk(false);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+      const data = await res.json();
+      if (data.erro) { setCepErro("CEP não encontrado."); setBuscando(false); return; }
+      setCepOk(true);
+      onCepFill({ cep: val, rua: data.logradouro || "", bairro: data.bairro || "", cidade: data.localidade || "", uf: data.uf || "" });
+    } catch { setCepErro("Erro ao consultar CEP."); }
+    setBuscando(false);
+  };
+
+  const handleCepChange = (e) => {
+    const d = e.target.value.replace(/\D/g,"").slice(0,8);
+    const fmt = d.length > 5 ? d.slice(0,5)+"-"+d.slice(5) : d;
+    setCep(fmt); setCepOk(false); setCepErro("");
+    if (d.length === 8) buscarCep(fmt);
+  };
+
+  // Calcula frete grátis
+  const freteGratis = opcoes.find(o => o.id === "gratis" && o.minValue);
+  const faltaGratis = freteGratis ? Math.max(0, freteGratis.minValue - cartTotal) : 0;
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ fontSize: 10, letterSpacing: 2, color: "#a09080", textTransform: "uppercase", marginBottom: 10 }}>🚚 Frete & Entrega</div>
+
+      {/* Barra frete grátis */}
+      {faltaGratis > 0 && (
+        <div style={{ marginBottom: 10, background: "rgba(251,191,36,.07)", border: "1px solid rgba(251,191,36,.2)", borderRadius: 6, padding: "8px 12px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#fbbf24", marginBottom: 5 }}>
+            <span>Frete grátis acima de {fmt(freteGratis.minValue)}</span>
+            <span>Falta {fmt(faltaGratis)}</span>
+          </div>
+          <div style={{ height: 4, background: "#2a2a10", borderRadius: 2, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${Math.min(100,(cartTotal/freteGratis.minValue)*100)}%`, background: "linear-gradient(to right,#b45309,#fbbf24)", borderRadius: 2, transition: "width .4s" }} />
+          </div>
+        </div>
+      )}
+
+      {/* Campo CEP — integração ViaCEP */}
+      <div style={{ marginBottom: 10 }}>
+        <div style={{ fontSize: 10, color: "#7a6a6a", marginBottom: 5 }}>Digite seu CEP para calcular:</div>
+        <div style={{ display: "flex", gap: 7 }}>
+          <div style={{ position: "relative", flex: 1 }}>
+            <input value={cep} onChange={handleCepChange} placeholder="00000-000" maxLength={9}
+              style={{ width: "100%", background: "#0c0a09", border: `1px solid ${cepOk ? "#4ade80" : cepErro ? "#ef4444" : "#2a1f1f"}`, borderRadius: 4, padding: "8px 32px 8px 10px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif" }} />
+            <span style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", fontSize: 12 }}>
+              {buscando ? "⏳" : cepOk ? "✅" : cepErro ? "❌" : ""}
+            </span>
+          </div>
+          <a href="https://buscacepinter.correios.com.br" target="_blank" rel="noreferrer"
+            style={{ padding: "8px 10px", background: "#1a1410", border: "1px solid #2a1f1f", borderRadius: 4, color: "#8b6060", fontSize: 10, textDecoration: "none", display: "flex", alignItems: "center", whiteSpace: "nowrap", fontFamily: "Georgia,serif" }}>
+            Não sei
+          </a>
+        </div>
+        {cepErro && <div style={{ fontSize: 10, color: "#f87171", marginTop: 4 }}>{cepErro}</div>}
+        {cepOk && <div style={{ fontSize: 10, color: "#4ade80", marginTop: 4 }}>✓ Endereço preenchido automaticamente no checkout</div>}
+      </div>
+
+      {/* Opções de frete */}
+      {opcoes.length > 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {opcoes.map(opt => {
+            // Frete grátis: só mostrar se atingiu o mínimo
+            if (opt.id === "gratis" && opt.minValue && cartTotal < opt.minValue) return null;
+            const sel = freteEscolhido?.id === opt.id;
+            return (
+              <div key={opt.id} onClick={() => setFreteEscolhido(sel ? null : opt)}
+                style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", background: sel ? "rgba(139,44,44,.18)" : "#1a1410", border: `1px solid ${sel ? "#8b2c2c" : "#2a1f1f"}`, borderRadius: 8, cursor: "pointer", transition: "all .2s" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 16 }}>{opt.icon || "📦"}</span>
+                  <div>
+                    <div style={{ fontSize: 13, color: "#f5f0e8", fontWeight: sel ? "bold" : "normal" }}>{opt.nome}</div>
+                    <div style={{ fontSize: 10, color: "#6ade80" }}>⏱ {opt.prazo}</div>
+                  </div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 13, color: opt.base === 0 ? "#4ade80" : "#e8b4b4", fontWeight: "bold" }}>
+                    {opt.base === 0 ? "GRÁTIS" : fmt(opt.base)}
+                  </div>
+                  {sel && <div style={{ fontSize: 9, color: "#8b2c2c", letterSpacing: 1 }}>● SELECIONADO</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{ fontSize: 11, color: "#5a4a4a", padding: "10px 0" }}>
+          Configure as opções de frete no ADM → Frete.
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ── BannerEditor — edição completa de banner promocional ──────────────────────
+const ACCENT_PRESETS = ["#fbbf24","#e8b4b4","#60a5fa","#4ade80","#c084fc","#f87171","#fb923c","#ffffff"];
+const BannerEditor = ({ banner, banners, setBanners, showToast, saveBanners }) => {
+  const [open, setOpen] = useState(false);
+  const [form, setForm] = useState({ ...banner });
+
+  const upd = (field, val) => setForm(p => ({ ...p, [field]: val }));
+
+  const save = () => {
+    const next = banners.map(b => b.id === form.id ? form : b);
+    saveBanners(next);
+    showToast("✅ Banner salvo e publicado na home!");
+    setOpen(false);
+  };
+
+  const toggleActive = () => {
+    const next = banners.map(b => b.id === banner.id ? { ...b, active: !b.active } : b);
+    saveBanners(next);
+    showToast(banner.active ? "Banner desativado." : "✅ Banner ativado na home!");
+  };
+
+  const inp = (label, field, placeholder, full) => (
+    <div key={field} style={full ? { gridColumn:"1/-1" } : {}}>
+      <label style={{ display:"block", fontSize:9, letterSpacing:2, color:"#5a4a4a", textTransform:"uppercase", marginBottom:4 }}>{label}</label>
+      <input value={form[field] || ""} onChange={e => upd(field, e.target.value)} placeholder={placeholder}
+        style={{ width:"100%", background:"#0c0a09", border:"1px solid #2a1f1f", borderRadius:4, padding:"8px 10px", color:"#f5f0e8", fontSize:13, fontFamily:"Georgia,serif" }} />
+    </div>
+  );
+
+  return (
+    <div style={{ background:"linear-gradient(145deg,#1a1410,#120e0c)", border:`1px solid ${form.active ? "#3a2a1a" : "#2a1f1f"}`, borderRadius:12, overflow:"hidden" }}>
+      {/* Preview */}
+      <div style={{ background: form.img ? `url(${form.img}) center/cover` : form.bg, padding:"18px 22px", position:"relative", minHeight:80 }}>
+        {form.img && <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,.45)" }} />}
+        <div style={{ position:"relative", zIndex:1, display:"flex", alignItems:"center", gap:14 }}>
+          <div style={{ flex:1 }}>
+            <span style={{ fontSize:8, letterSpacing:2, padding:"2px 8px", border:`1px solid ${form.accent}60`, color:form.accent, borderRadius:2, textTransform:"uppercase" }}>{form.tag}</span>
+            <div style={{ fontSize:15, color:"#f5f0e8", fontWeight:"bold", marginTop:6 }}>{form.title}</div>
+            <div style={{ fontSize:11, color:"#a09080", marginTop:3 }}>{form.subtitle}</div>
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:7, alignItems:"flex-end", flexShrink:0 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:7 }}>
+              <span style={{ fontSize:10, color: form.active ? "#4ade80" : "#5a4a4a" }}>{form.active ? "● Ativo" : "○ Inativo"}</span>
+              <button onClick={toggleActive}
+                style={{ padding:"4px 10px", background: form.active ? "#7f1d1d" : "#1a3a1a", border:"none", borderRadius:4, color: form.active ? "#fca5a5" : "#4ade80", cursor:"pointer", fontSize:10, fontFamily:"Georgia,serif" }}>
+                {form.active ? "Desativar" : "Ativar"}
+              </button>
+              <button onClick={() => setOpen(p => !p)}
+                style={{ padding:"4px 10px", background:"rgba(139,44,44,.3)", border:"1px solid #8b2c2c", borderRadius:4, color:"#e8b4b4", cursor:"pointer", fontSize:10, fontFamily:"Georgia,serif" }}>
+                ✏️ Editar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Info rápida */}
+      {!open && (
+        <div style={{ padding:"10px 16px", display:"flex", gap:16, flexWrap:"wrap", fontSize:10, color:"#5a4a4a" }}>
+          <span>CTA: <strong style={{ color:"#a09080" }}>{form.cta}</strong></span>
+          <span>Filtro: <strong style={{ color:"#a09080" }}>{form.targetFilter || "Sem filtro"}</strong></span>
+          <span>Cor: <strong style={{ color:form.accent }}>{form.accent}</strong></span>
+          {form.img && <span style={{ color:"#4ade80" }}>🖼 Com imagem</span>}
+        </div>
+      )}
+
+      {/* Formulário de edição */}
+      {open && (
+        <div style={{ padding:"18px 20px", borderTop:"1px solid #2a1f1f" }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
+            {inp("Tag (ex: PROMOÇÃO)", "tag", "PROMOÇÃO", false)}
+            {inp("Texto do botão CTA", "cta", "Ver Ofertas", false)}
+            {inp("Título", "title", "Semana do Champagne", true)}
+            {inp("Subtítulo", "subtitle", "Espumantes com até 20% OFF", true)}
+            <div>
+              <label style={{ display:"block", fontSize:9, letterSpacing:2, color:"#5a4a4a", textTransform:"uppercase", marginBottom:4 }}>Filtro ao clicar</label>
+              <select value={form.targetFilter || ""} onChange={e => upd("targetFilter", e.target.value || null)}
+                style={{ width:"100%", background:"#0c0a09", border:"1px solid #2a1f1f", borderRadius:4, padding:"8px 10px", color:"#f5f0e8", fontSize:13, fontFamily:"Georgia,serif" }}>
+                <option value="">Sem filtro</option>
+                {["Tinto","Branco","Espumante","Rosé"].map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={{ display:"block", fontSize:9, letterSpacing:2, color:"#5a4a4a", textTransform:"uppercase", marginBottom:4 }}>Cor de destaque</label>
+              <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
+                {ACCENT_PRESETS.map(c => (
+                  <div key={c} onClick={() => upd("accent", c)}
+                    style={{ width:22, height:22, borderRadius:"50%", background:c, cursor:"pointer", border:`2px solid ${form.accent === c ? "#fff" : "transparent"}`, transition:"all .2s" }} />
+                ))}
+                <input type="color" value={form.accent} onChange={e => upd("accent", e.target.value)}
+                  style={{ width:22, height:22, borderRadius:"50%", border:"none", padding:0, cursor:"pointer", background:"none" }} title="Cor personalizada" />
+              </div>
+            </div>
+          </div>
+
+          {/* Imagem de fundo do banner */}
+          <div style={{ marginBottom:14, background:"#0c0a09", border:"1px solid #2a1f1f", borderRadius:8, padding:12 }}>
+            <div style={{ fontSize:9, letterSpacing:2, color:"#5a4a4a", textTransform:"uppercase", marginBottom:8 }}>🖼 Imagem de Fundo (opcional)</div>
+            {form.img ? (
+              <div style={{ display:"flex", gap:10, alignItems:"center", marginBottom:8 }}>
+                <img src={form.img} alt="preview" style={{ width:80, height:40, objectFit:"cover", borderRadius:4, border:"1px solid #3a2a2a" }} />
+                <button onClick={() => upd("img", null)}
+                  style={{ padding:"4px 10px", background:"none", border:"1px solid #3a1f1f", color:"#ef4444", borderRadius:4, cursor:"pointer", fontSize:10, fontFamily:"Georgia,serif" }}>
+                  🗑 Remover
+                </button>
+                <span style={{ fontSize:9, color:"#4ade80" }}>✓ Imagem carregada</span>
+              </div>
+            ) : (
+              <div style={{ fontSize:9, color:"#3a2a2a", marginBottom:8 }}>Sem imagem — usa o gradiente de cor configurado.</div>
+            )}
+            <input type="file" accept="image/*" id={`bannerImg_${banner.id}`} style={{ display:"none" }}
+              onChange={e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => upd("img", ev.target.result); r.readAsDataURL(f); e.target.value=""; }} />
+            <button onClick={() => document.getElementById(`bannerImg_${banner.id}`).click()}
+              style={{ padding:"7px 14px", background:"#1a1410", border:"1px solid #3a2f2f", color:"#e8b4b4", borderRadius:4, cursor:"pointer", fontSize:10, fontFamily:"Georgia,serif" }}>
+              📷 Enviar Imagem
+            </button>
+          </div>
+
+          <div style={{ display:"flex", gap:10 }}>
+            <button onClick={save}
+              style={{ padding:"9px 22px", background:"#8b2c2c", border:"none", borderRadius:4, color:"#fff", cursor:"pointer", fontSize:12, fontFamily:"Georgia,serif", letterSpacing:1 }}>
+              💾 Salvar Banner
+            </button>
+            <button onClick={() => { setForm({...banner}); setOpen(false); }}
+              style={{ padding:"9px 14px", background:"none", border:"1px solid #2a1f1f", borderRadius:4, color:"#5a4a4a", cursor:"pointer", fontSize:11, fontFamily:"Georgia,serif" }}>
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ── App ───────────────────────────────────────────────────────────────────────
 // ─── Painel Supabase (componente próprio para evitar hook em IIFE) ────────────
@@ -1940,16 +2376,33 @@ export default function App() {
   const [search, setSearch] = useState("");
   const [cartOpen, setCartOpen] = useState(false);
   const [selectedWine, setSelectedWine] = useState(null);
-  const [orders, setOrders] = useState(INITIAL_ORDERS);
+  const [orders, setOrders] = useState(() => {
+    // 19: Carrega pedidos do localStorage ao iniciar (fix: pedidos não apareciam no ADM)
+    try {
+      const local = JSON.parse(localStorage.getItem("v9_orders") || "[]");
+      return local.length > 0 ? local : INITIAL_ORDERS;
+    } catch { return INITIAL_ORDERS; }
+  });
   const [reviews, setReviews] = useState(INITIAL_REVIEWS);
   const [toast, setToast] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginUser, setLoginUser] = useState("");
   const [loginPass, setLoginPass] = useState("");
   const [loginError, setLoginError] = useState("");
-  const [banners, setBanners] = useState(INITIAL_BANNERS);
-  const [highlightIds, setHighlightIds] = useState(INITIAL_HIGHLIGHT_WINES);
-  const [heroBanner, setHeroBanner] = useState(INITIAL_HERO_BANNER);
+  const [banners, setBanners] = useState(() => {
+    try { const s = localStorage.getItem("v9_banners"); return s ? JSON.parse(s) : INITIAL_BANNERS; } catch { return INITIAL_BANNERS; }
+  });
+  const saveBanners = (b) => { setBanners(b); try { localStorage.setItem("v9_banners", JSON.stringify(b)); } catch {} };
+
+  const [highlightIds, setHighlightIds] = useState(() => {
+    try { const s = localStorage.getItem("v9_highlights"); return s ? JSON.parse(s) : INITIAL_HIGHLIGHT_WINES; } catch { return INITIAL_HIGHLIGHT_WINES; }
+  });
+  const saveHighlights = (ids) => { setHighlightIds(ids); try { localStorage.setItem("v9_highlights", JSON.stringify(ids)); } catch {} };
+
+  const [heroBanner, setHeroBanner] = useState(() => {
+    try { const s = localStorage.getItem("v9_hero"); return s ? JSON.parse(s) : INITIAL_HERO_BANNER; } catch { return INITIAL_HERO_BANNER; }
+  });
+  const saveHero = (h) => { setHeroBanner(h); try { localStorage.setItem("v9_hero", JSON.stringify(h)); } catch {} };
   const [clientPanelOpen, setClientPanelOpen] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [editWine, setEditWine] = useState(null);
@@ -1994,6 +2447,8 @@ export default function App() {
   const [zoomWine, setZoomWine] = useState(null);
   const [reviewedWines, setReviewedWines] = useState(new Set());
   const [catalogLoading, setCatalogLoading] = useState(false);
+  // Estado para modais de info na página do produto (13-16)
+  const [openInfoModal, setOpenInfoModal] = useState(null); // "termos"|"troca"|"garantia"|"pagamento"
   const [supaCfg, setSupaCfg] = useState(() => getSupaCfg());
   const [supaStatus, setSupaStatus] = useState("idle");
   const [supaConnected, setSupaConnected] = useState(false);
@@ -2002,6 +2457,11 @@ export default function App() {
   const [paymentKeys, setPaymentKeys] = useState(() => { try { const s = localStorage.getItem("v9_keys"); return s ? JSON.parse(s) : {}; } catch { return {}; } });
   const [paymentSaved, setPaymentSaved] = useState(false);
   const [exportMsg, setExportMsg] = useState("");
+  // 💳 Descontos por forma de pagamento
+  const [payDescontos, setPayDescontos] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("v9_pay_desc") || '{"pix":5,"boleto":3,"credito1x":0}'); } catch { return { pix:5, boleto:3, credito1x:0 }; }
+  });
+  const savePayDescontos = (d) => { setPayDescontos(d); try { localStorage.setItem("v9_pay_desc", JSON.stringify(d)); } catch {} };
 
   // 🔗 URL persistence — lê ?produto=ID e abre o produto correto (funciona com Supabase async)
   const pendingProductId = useRef((() => { try { return new URLSearchParams(window.location.search).get("produto"); } catch { return null; } })());
@@ -2148,6 +2608,12 @@ export default function App() {
     if (supaCfg) await supa.wines.delete(id, supaCfg);
   };
   const dbInsertOrder = async (order) => {
+    // 19: Sempre persiste no localStorage para o ADM ver mesmo sem Supabase
+    try {
+      const local = JSON.parse(localStorage.getItem("v9_orders") || "[]");
+      local.unshift(order);
+      localStorage.setItem("v9_orders", JSON.stringify(local));
+    } catch {}
     if (supaCfg) await supa.orders.insert(order, supaCfg);
   };
   const dbInsertReview = async (review) => {
@@ -2181,7 +2647,10 @@ export default function App() {
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const emptyCheckout = { nome: "", cpf: "", contato: "", cep: "", rua: "", numero: "", complemento: "", bairro: "", cidade: "", uf: "" };
   const [checkoutData, setCheckoutData] = useState(emptyCheckout);
-  const [checkoutStep, setCheckoutStep] = useState(1); // 1=dados, 2=confirmação, 3=sucesso
+  const [checkoutStep, setCheckoutStep] = useState(1);
+  // 🚚 Frete selecionado no carrinho
+  const [freteEscolhido, setFreteEscolhido] = useState(null); // { id, nome, icon, prazo, base }
+  const freteTotal = freteEscolhido ? freteEscolhido.base : 0;
   const emptyWine = { name: "", origin: "", region: "", year: "", costPrice: "", price: "", promoPrice: "", stock: "", category: "Tinto", description: "", alcohol: "", grapes: "", img: null, keywords: "", harmonization: "" };
   const [newWine, setNewWine] = useState(emptyWine);
   const newImgRef = useRef();
@@ -2325,7 +2794,7 @@ export default function App() {
   const cartTotal = cart.reduce((s, i) => s + (i.promoPrice || i.price) * i.qty, 0);
   const cartCount = cart.reduce((s, i) => s + i.qty, 0);
   const discountAmt = appliedCoupon ? Math.round(cartTotal * (couponPct(appliedCoupon) / 100)) : 0;
-  const cartFinal = cartTotal - discountAmt;
+  const cartFinal = cartTotal - discountAmt + (freteEscolhido?.base || 0);
   const handleApplyCoupon = () => {
     const code = couponInput.trim().toUpperCase();
     if (!COUPONS[code]) { showToast("Cupom inválido ou expirado.", "error"); return; }
@@ -2505,6 +2974,11 @@ export default function App() {
     <div style={{ fontFamily: "'Georgia','Times New Roman',serif", minHeight: "100vh", background: "#0c0a09", color: "#f5f0e8" }}>
       <style>{`
         *{box-sizing:border-box;margin:0;padding:0}
+
+        /* ── DESKTOP: base font maior ── */
+        body,html{font-size:16px}
+        p,span,div,li,td,th,label,input,select,textarea,button{font-size:inherit}
+
         ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#1a1410}::-webkit-scrollbar-thumb{background:#8b2c2c;border-radius:3px}
         @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
         @keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
@@ -2513,42 +2987,60 @@ export default function App() {
         @keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
         .wine-card{transition:all .3s ease;cursor:pointer}
         .wine-card:hover{transform:translateY(-6px);box-shadow:0 20px 60px rgba(139,44,44,.35)!important}
-        .btn-red{background:#8b2c2c;border:none;color:#fff;cursor:pointer;font-family:Georgia,serif;transition:background .2s}
+        .btn-red{background:#8b2c2c;border:none;color:#fff;cursor:pointer;font-family:Georgia,serif;transition:background .2s;font-size:14px!important}
         .btn-red:hover{background:#a83232!important}
-        .btn-ghost{background:transparent;border:1px solid #2a1f1f;color:#7a6a6a;cursor:pointer;font-family:Georgia,serif;transition:all .2s}
-        .btn-ghost:hover{border-color:#5a4a4a!important;color:#a09080!important}
-        .nav-link{cursor:pointer;font-size:13px;letter-spacing:2px;text-transform:uppercase;transition:color .2s}
+        .btn-ghost{background:transparent;border:1px solid #2a1f1f;color:#8a7a7a;cursor:pointer;font-family:Georgia,serif;transition:all .2s;font-size:14px!important}
+        .btn-ghost:hover{border-color:#6a5a5a!important;color:#b0a090!important}
+        .nav-link{cursor:pointer;font-size:15px!important;letter-spacing:2px;text-transform:uppercase;transition:color .2s}
         .nav-link:hover{color:#e8b4b4!important}
         .adm-tab:hover{background:rgba(139,44,44,.3)!important}
-        input,select,textarea{outline:none}
+        input,select,textarea{outline:none;font-size:14px!important}
         input:focus,select:focus,textarea:focus{border-color:#8b2c2c!important}
         .scroll-row{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px}
         .scroll-row::-webkit-scrollbar{height:4px}
         .scroll-row::-webkit-scrollbar-thumb{background:#2a1f1f;border-radius:2px}
+
+        /* ── ADM: textos mais claros ── */
+        .adm-content{color:#d0c0c0!important}
+        .adm-content h1,.adm-content h2,.adm-content h3{color:#f0dede!important;font-size:1.2em}
+        .adm-content p{color:#b8a8a8!important;font-size:14px}
+        .adm-content label{color:#c8b0b0!important;font-size:13px!important}
+        .adm-content input,.adm-content select,.adm-content textarea{color:#f0dede!important;font-size:14px!important}
+        .adm-content td{color:#c8b8b8!important;font-size:13px!important}
+        .adm-content th{color:#b09090!important;font-size:11px!important;letter-spacing:1.5px}
+        .adm-content span:not([style]){color:#c0b0b0}
+        .adm-sidebar button{font-size:13px!important;color:#c0a8a8!important}
+        .adm-sidebar button[style*="color:#e8b4b4"]{color:#e8b4b4!important}
+
         @media(max-width:768px){
+          /* ── MOBILE: fontes maiores ── */
+          body,html{font-size:15px}
           .desktop-nav{display:none!important}
           .mobile-nav{display:flex!important}
-          .hero-title{font-size:28px!important}
-          .hero-sec{height:280px!important}
-          .catalog-grid{grid-template-columns:repeat(auto-fill,minmax(148px,1fr))!important;gap:12px!important}
-          .cat-pad{padding:18px 14px 0!important}
+          .hero-title{font-size:30px!important}
+          .hero-sec{height:300px!important}
+          .catalog-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))!important;gap:14px!important}
+          .cat-pad{padding:18px 16px 0!important}
           .filters-row{flex-direction:column!important;gap:10px!important}
-          .cat-btns{flex-wrap:wrap!important;gap:6px!important}
+          .cat-btns{flex-wrap:wrap!important;gap:8px!important}
           .adm-layout{flex-direction:column!important}
           .adm-sidebar{width:100%!important;flex-direction:row!important;display:flex!important;overflow-x:auto!important;padding:0!important;border-right:none!important;border-bottom:1px solid #2a1f1f!important;position:static!important;align-items:center!important}
           .adm-sidebar>div:first-child{display:none!important}
           .adm-sidebar>div.adm-tabs-wrap{display:contents!important;flex:1!important}
           .adm-sidebar>div.adm-sair-wrap{flex-shrink:0!important;padding:4px 8px!important;border-left:1px solid #2a1f1f!important}
-          .adm-sidebar button{white-space:nowrap!important;border-left:none!important;border-bottom:3px solid transparent!important;padding:10px 12px!important}
-          .adm-content{padding:16px 12px!important}
+          .adm-sidebar button{white-space:nowrap!important;border-left:none!important;border-bottom:3px solid transparent!important;padding:12px 14px!important;font-size:14px!important}
+          .adm-content{padding:18px 14px!important;font-size:15px!important}
           .kpi-grid{grid-template-columns:repeat(2,1fr)!important}
           .form-grid{grid-template-columns:1fr!important}
-          .tbl{font-size:11px!important}
-          .tbl td,.tbl th{padding:7px 8px!important}
+          .tbl{font-size:13px!important}
+          .tbl td,.tbl th{padding:10px 10px!important}
           .detail-flex{flex-direction:column!important}
           .detail-img{width:100%!important;flexShrink:unset!important}
           .cart-panel{width:100%!important}
           .promo-banner{flex-direction:column!important;gap:12px!important}
+          input,select,textarea{font-size:16px!important}
+          .btn-red,.btn-ghost{font-size:15px!important;padding:12px 20px!important}
+          .nav-link{font-size:16px!important}
         }
       `}</style>
 
@@ -2827,11 +3319,39 @@ export default function App() {
                 );
               })}
             </div>
+
+            {/* 21: CTAs estratégicos — fim do catálogo */}
+            <div style={{ padding: "32px 0 60px", display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* CTA 1: criar conta / pontos */}
+              <div style={{ background: "linear-gradient(135deg,#1a0a0a,#2d1010)", border: "1px solid #3a1f1f", borderRadius: 14, padding: "22px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+                <div>
+                  <div style={{ fontSize: 10, letterSpacing: 3, color: "#8b4040", textTransform: "uppercase", marginBottom: 5 }}>Clube Vinhos9</div>
+                  <div style={{ fontSize: 18, color: "#f5f0e8", fontWeight: "bold", marginBottom: 5 }}>🎁 Ganhe 200 pontos no cadastro</div>
+                  <div style={{ fontSize: 13, color: "#a09080" }}>Acumule pontos a cada compra e troque por descontos exclusivos</div>
+                </div>
+                <button className="btn-red" onClick={() => setClientPanelOpen(true)}
+                  style={{ padding: "12px 26px", borderRadius: 6, fontSize: 13, letterSpacing: 1, whiteSpace: "nowrap" }}>
+                  Criar Conta Grátis →
+                </button>
+              </div>
+              {/* CTA 2: promoções se houver */}
+              {promoWines.length > 0 && (
+                <div style={{ background: "linear-gradient(135deg,#1a1000,#2a1a00)", border: "1px solid #3a2a00", borderRadius: 14, padding: "22px 28px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
+                  <div>
+                    <div style={{ fontSize: 10, letterSpacing: 3, color: "#b45309", textTransform: "uppercase", marginBottom: 5 }}>Ofertas com prazo</div>
+                    <div style={{ fontSize: 18, color: "#fbbf24", fontWeight: "bold", marginBottom: 5 }}>🏷 {promoWines.length} vinhos em promoção</div>
+                    <div style={{ fontSize: 13, color: "#a09080" }}>Descontos especiais por tempo limitado — aproveite!</div>
+                  </div>
+                  <button onClick={() => document.getElementById("promocoes")?.scrollIntoView({ behavior: "smooth" })}
+                    style={{ padding: "12px 26px", borderRadius: 6, fontSize: 13, letterSpacing: 1, background: "#b45309", border: "none", color: "#fff", cursor: "pointer", fontFamily: "Georgia,serif", whiteSpace: "nowrap" }}>
+                    Ver Promoções →
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </main>
       )}
-
-      {/* ── DETALHE DO VINHO ── */}
       {page === "store" && selectedWine && (
         <div style={{ animation: "slideUp .4s ease" }}>
           <div style={{ maxWidth: 960, margin: "0 auto", padding: "32px 20px" }}>
@@ -2912,6 +3432,128 @@ export default function App() {
                 {/* Calculadora de Frete */}
                 <FreteCalculator wine={selectedWine} />
 
+                {/* 13-16: Botões de informação do produto */}
+                <div style={{ marginTop: 16 }}>
+                  {/* Linha de botões */}
+                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
+                    {[
+                      { key: "pagamento", icon: "💳", label: "Pagamento" },
+                      { key: "termos",    icon: "📄", label: "Termos" },
+                      { key: "troca",     icon: "🔄", label: "Trocas" },
+                      { key: "garantia",  icon: "✅", label: "Garantia" },
+                    ].map(({ key, icon, label }) => (
+                      <button key={key}
+                        onClick={() => setOpenInfoModal(openInfoModal === key ? null : key)}
+                        style={{ padding: "8px 14px", background: openInfoModal === key ? "rgba(139,44,44,.2)" : "#1a1410", border: `1px solid ${openInfoModal === key ? "#8b2c2c" : "#2a1f1f"}`, borderRadius: 6, color: openInfoModal === key ? "#e8b4b4" : "#a09080", cursor: "pointer", fontSize: 12, fontFamily: "Georgia,serif", transition: "all .2s", display: "flex", alignItems: "center", gap: 5 }}>
+                        {icon} {label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 16: Painel — Formas de Pagamento */}
+                  {openInfoModal === "pagamento" && (
+                    <div style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, padding: "16px 18px", marginBottom: 8, animation: "fadeIn .2s ease" }}>
+                      <div style={{ fontSize: 10, letterSpacing: 2, color: "#a09080", textTransform: "uppercase", marginBottom: 12 }}>💳 Formas de Pagamento & Descontos</div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        {[
+                          { icon: "⚡", label: "Pix",              desc: "Aprovação imediata",        pctKey: "pix",       color: "#4ade80" },
+                          { icon: "📄", label: "Boleto Bancário",   desc: "Vence em 3 dias úteis",    pctKey: "boleto",    color: "#fbbf24" },
+                          { icon: "💳", label: "Cartão 1x",         desc: "Sem acréscimos",            pctKey: "credito1x", color: "#e8b4b4" },
+                          { icon: "💳", label: "Cartão até 12x",    desc: "Juros do cartão",           pctKey: null,        color: "#a09080" },
+                        ].map(({ icon, label, desc, pctKey, color }) => {
+                          const pct = pctKey ? (payDescontos[pctKey] || 0) : 0;
+                          const preco = selectedWine.promoPrice || selectedWine.price;
+                          return (
+                            <div key={label} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "9px 12px", background: "#120e0c", borderRadius: 8, border: "1px solid #2a1f1f" }}>
+                              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                                <span style={{ fontSize: 16 }}>{icon}</span>
+                                <div>
+                                  <div style={{ fontSize: 13, color: "#f5f0e8" }}>{label}</div>
+                                  <div style={{ fontSize: 10, color: "#7a6a6a" }}>{desc}</div>
+                                </div>
+                              </div>
+                              <div style={{ textAlign: "right" }}>
+                                {pct > 0 ? (
+                                  <>
+                                    <div style={{ fontSize: 12, color, fontWeight: "bold" }}>−{pct}% OFF</div>
+                                    <div style={{ fontSize: 13, color: "#4ade80", fontWeight: "bold" }}>{fmt(preco * (1 - pct / 100))}</div>
+                                  </>
+                                ) : (
+                                  <div style={{ fontSize: 13, color: "#a09080" }}>{fmt(preco)}</div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div style={{ marginTop: 10, fontSize: 11, color: "#5a4a4a", lineHeight: 1.6 }}>
+                        🔒 Pagamentos via <strong style={{ color: "#a09080" }}>Mercado Pago</strong> — não armazenamos dados do seu cartão.
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 13: Painel — Termos e Condições */}
+                  {openInfoModal === "termos" && (
+                    <div style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, padding: "16px 18px", marginBottom: 8, animation: "fadeIn .2s ease", maxHeight: 280, overflowY: "auto" }}>
+                      <div style={{ fontSize: 10, letterSpacing: 2, color: "#a09080", textTransform: "uppercase", marginBottom: 12 }}>📄 Termos e Condições de Venda</div>
+                      {[
+                        ["🔞 Maiores de 18 anos", "A venda de bebidas alcoólicas é exclusiva para maiores de 18 anos, conforme a Lei nº 9.294/96. Ao finalizar a compra, você confirma ter a idade mínima exigida."],
+                        ["📦 Entrega", "Entregas realizadas em todo o Brasil via PAC, SEDEX ou transportadora parceira. Prazos contados após confirmação do pagamento."],
+                        ["↩️ Cancelamento", "Pedidos podem ser cancelados em até 7 dias após a entrega, conforme o Código de Defesa do Consumidor (Lei nº 8.078/90), desde que o produto esteja lacrado."],
+                        ["⚖️ Responsabilidade", "A Vinhos9 não se responsabiliza por divergências causadas por informações incorretas fornecidas pelo cliente no ato da compra."],
+                        ["🔐 LGPD", "Seus dados pessoais são tratados conforme a Lei nº 13.709/2018 (LGPD), utilizados apenas para processamento e entrega do pedido."],
+                      ].map(([titulo, texto]) => (
+                        <div key={titulo} style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: 12, color: "#e8b4b4", fontWeight: "bold", marginBottom: 3 }}>{titulo}</div>
+                          <div style={{ fontSize: 12, color: "#8a7a7a", lineHeight: 1.7 }}>{texto}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 14: Painel — Política de Troca */}
+                  {openInfoModal === "troca" && (
+                    <div style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, padding: "16px 18px", marginBottom: 8, animation: "fadeIn .2s ease" }}>
+                      <div style={{ fontSize: 10, letterSpacing: 2, color: "#a09080", textTransform: "uppercase", marginBottom: 12 }}>🔄 Política de Troca e Devolução</div>
+                      {[
+                        ["✅ Quando aceitamos", "Produto entregue danificado, rótulo trocado ou com defeito de fábrica. Aceitamos devoluções em até 7 dias após o recebimento."],
+                        ["📸 Como solicitar", "Fotografe o produto e entre em contato via WhatsApp ou e-mail com o número do pedido. Nossa equipe responde em até 24h úteis."],
+                        ["💰 Reembolso", "Reembolso pela mesma forma de pagamento usada na compra, em até 10 dias úteis após aprovação."],
+                        ["❌ Exceções", "Não aceitamos trocas de produtos abertos ou consumidos, salvo comprovação de defeito."],
+                      ].map(([titulo, texto]) => (
+                        <div key={titulo} style={{ marginBottom: 12 }}>
+                          <div style={{ fontSize: 12, color: "#e8b4b4", fontWeight: "bold", marginBottom: 3 }}>{titulo}</div>
+                          <div style={{ fontSize: 12, color: "#8a7a7a", lineHeight: 1.7 }}>{texto}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* 15: Painel — Garantia de Originalidade */}
+                  {openInfoModal === "garantia" && (
+                    <div style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid rgba(74,222,128,.3)", borderRadius: 10, padding: "16px 18px", marginBottom: 8, animation: "fadeIn .2s ease" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                        <div style={{ fontSize: 28 }}>🏅</div>
+                        <div>
+                          <div style={{ fontSize: 13, color: "#4ade80", fontWeight: "bold" }}>Garantia de Originalidade Vinhos9</div>
+                          <div style={{ fontSize: 11, color: "#86efac" }}>100% importado e certificado</div>
+                        </div>
+                      </div>
+                      {[
+                        ["🍇 Origem certificada", "Todos os rótulos são importados diretamente de vinícolas parceiras ou distribuidores autorizados, com nota fiscal e documentação de importação."],
+                        ["🔍 Curadoria rigorosa", "Cada lote passa por inspeção de selos, rolhas e condições de transporte antes de chegar ao cliente."],
+                        ["📜 Rastreabilidade", "Mantemos registro completo de origem para todos os produtos. Trabalhamos apenas com fornecedores certificados."],
+                        ["💯 Garantia total", "Se você suspeitar de adulteração, devolvemos seu dinheiro integralmente, sem questionamentos."],
+                      ].map(([titulo, texto]) => (
+                        <div key={titulo} style={{ marginBottom: 10 }}>
+                          <div style={{ fontSize: 12, color: "#e8b4b4", fontWeight: "bold", marginBottom: 3 }}>{titulo}</div>
+                          <div style={{ fontSize: 12, color: "#8a7a7a", lineHeight: 1.7 }}>{texto}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 {/* Harmonização */}
                 <div style={{ background: "#120e0c", border: "1px solid #2a1f1f", borderRadius: 10, padding: "18px 20px", marginTop: 14 }}>
                   <div style={{ fontSize: 9, letterSpacing: 3, color: "#8b6060", textTransform: "uppercase", marginBottom: 10 }}>🍽 Harmonização</div>
@@ -2939,12 +3581,13 @@ export default function App() {
                 subtitle="Você também pode gostar"
                 accentColor="#e8b4b4"
                 autoPlay={true}
-                visibleDesktop={4}
+                visibleDesktop={3}
+                fadeMode={true}
                 onSelect={(wine) => { setSelectedWine(wine); window.scrollTo({ top: 0, behavior: "smooth" }); }}
               />
             )}
 
-            {/* Carrossel — em promoção */}
+            {/* Carrossel — em promoção (4 itens, animação slide padrão) */}
             {promoWines.filter((w) => w.id !== selectedWine.id).length > 0 && (
               <div style={{ marginTop: 0, paddingTop: 0 }}>
                 <Carousel
@@ -2954,6 +3597,7 @@ export default function App() {
                   accentColor="#fbbf24"
                   autoPlay={true}
                   visibleDesktop={4}
+                  fadeMode={false}
                   onSelect={(wine) => { setSelectedWine(wine); window.scrollTo({ top: 0, behavior: "smooth" }); }}
                 />
               </div>
@@ -2966,9 +3610,9 @@ export default function App() {
       {cartOpen && (
         <div style={{ position: "fixed", inset: 0, zIndex: 200 }}>
           <div onClick={() => setCartOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.72)", backdropFilter: "blur(4px)" }} />
-          <div className="cart-panel" style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 370, background: "#140e0e", borderLeft: "1px solid #2a1f1f", animation: "slideIn .3s ease", display: "flex", flexDirection: "column" }}>
+          <div className="cart-panel" style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 390, background: "#140e0e", borderLeft: "1px solid #2a1f1f", animation: "slideIn .3s ease", display: "flex", flexDirection: "column" }}>
             <div style={{ padding: "18px 22px 14px", borderBottom: "1px solid #2a1f1f", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <h2 style={{ fontSize: 15, letterSpacing: 2 }}>Carrinho ({cartCount})</h2>
+              <h2 style={{ fontSize: 15, letterSpacing: 2 }}>🛒 Carrinho ({cartCount})</h2>
               <button onClick={() => setCartOpen(false)} style={{ background: "none", border: "none", color: "#a09080", cursor: "pointer", fontSize: 17 }}>✕</button>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: 18 }}>
@@ -2977,65 +3621,81 @@ export default function App() {
                   <div style={{ width: 60, height: 60, margin: "0 auto 12px", borderRadius: 8, overflow: "hidden" }}><BottlePlaceholder size={60} /></div>
                   <p style={{ fontSize: 12 }}>Carrinho vazio</p>
                 </div>
-              ) : cart.map((item) => {
-                const ap = item.promoPrice || item.price;
-                return (
-                  <div key={item.id} style={{ display: "flex", gap: 10, marginBottom: 11, padding: 11, background: "#1a1410", borderRadius: 8, border: "1px solid #2a1f1f" }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 6, overflow: "hidden", flexShrink: 0 }}><WineThumb wine={item} height={44} /></div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 12, fontWeight: "bold", marginBottom: 2 }}>{item.name}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-                        <button onClick={() => updateCartQty(item.id, -1)} style={{ width: 22, height: 22, background: "#2a1f1f", border: "none", borderRadius: 3, color: "#e8b4b4", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
-                        <span style={{ fontSize: 12, color: "#f5f0e8", minWidth: 18, textAlign: "center" }}>{item.qty}</span>
-                        <button onClick={() => updateCartQty(item.id, 1)} style={{ width: 22, height: 22, background: "#2a1f1f", border: "none", borderRadius: 3, color: "#e8b4b4", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
-                        <span style={{ fontSize: 10, color: item.promoPrice ? "#fbbf24" : "#8b6060", marginLeft: 4 }}>{fmt(item.promoPrice || item.price)} × {item.qty}</span>
-                      </div>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ color: "#e8b4b4", fontWeight: "bold", fontSize: 12 }}>{fmt((item.promoPrice || item.price) * item.qty)}</div>
-                      <button onClick={() => removeFromCart(item.id)} style={{ background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>remover</button>
+              ) : cart.map((item) => (
+                <div key={item.id} style={{ display: "flex", gap: 10, marginBottom: 11, padding: 11, background: "#1a1410", borderRadius: 8, border: "1px solid #2a1f1f" }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 6, overflow: "hidden", flexShrink: 0 }}><WineThumb wine={item} height={44} /></div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: "bold", marginBottom: 2 }}>{item.name}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
+                      <button onClick={() => updateCartQty(item.id, -1)} style={{ width: 22, height: 22, background: "#2a1f1f", border: "none", borderRadius: 3, color: "#e8b4b4", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                      <span style={{ fontSize: 12, color: "#f5f0e8", minWidth: 18, textAlign: "center" }}>{item.qty}</span>
+                      <button onClick={() => updateCartQty(item.id, 1)} style={{ width: 22, height: 22, background: "#2a1f1f", border: "none", borderRadius: 3, color: "#e8b4b4", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                      <span style={{ fontSize: 10, color: item.promoPrice ? "#fbbf24" : "#8b6060", marginLeft: 4 }}>{fmt(item.promoPrice || item.price)} × {item.qty}</span>
                     </div>
                   </div>
-                );
-              })}
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ color: "#e8b4b4", fontWeight: "bold", fontSize: 12 }}>{fmt((item.promoPrice || item.price) * item.qty)}</div>
+                    <button onClick={() => removeFromCart(item.id)} style={{ background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>remover</button>
+                  </div>
+                </div>
+              ))}
             </div>
+
             {cart.length > 0 && (
-              <div style={{ padding: 18, borderTop: "1px solid #2a1f1f" }}>
+              <div style={{ padding: "16px 18px", borderTop: "1px solid #2a1f1f" }}>
+
+                {/* ── 10+11: Seleção de Frete com ViaCEP ── */}
+                <CartFreteSelector
+                  freteConfig={freteConfig}
+                  cartTotal={cartTotal - discountAmt}
+                  freteEscolhido={freteEscolhido}
+                  setFreteEscolhido={setFreteEscolhido}
+                  onCepFill={(addr) => setCheckoutData(p => ({ ...p, ...addr }))}
+                />
+
                 {/* Cupom */}
                 {!appliedCoupon ? (
-                  <div style={{ display: "flex", gap: 7, marginBottom: 14 }}>
+                  <div style={{ display: "flex", gap: 7, marginBottom: 12 }}>
                     <input value={couponInput} onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                       onKeyDown={(e) => e.key === "Enter" && handleApplyCoupon()}
                       placeholder="Cupom de desconto"
                       style={{ flex: 1, background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "8px 11px", color: "#f5f0e8", fontSize: 12, fontFamily: "Georgia,serif", letterSpacing: 1 }} />
                     <button onClick={handleApplyCoupon}
                       style={{ padding: "8px 12px", background: "#1a1410", border: "1px solid #2a1f1f", borderRadius: 4, color: "#e8b4b4", cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif" }}>
-                      🎁 Aplicar
+                      🎁
                     </button>
                   </div>
                 ) : (
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, padding: "8px 12px", background: "rgba(74,222,128,.07)", border: "1px solid rgba(74,222,128,.2)", borderRadius: 6 }}>
-                    <span style={{ fontSize: 11, color: "#4ade80" }}>🎁 {appliedCoupon} · -{couponPct(appliedCoupon)}%</span>
-                    <button onClick={() => { setAppliedCoupon(null); setCouponInput(""); }} style={{ background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>remover</button>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, padding: "7px 11px", background: "rgba(74,222,128,.07)", border: "1px solid rgba(74,222,128,.2)", borderRadius: 6 }}>
+                    <span style={{ fontSize: 11, color: "#4ade80" }}>🎁 {appliedCoupon} −{couponPct(appliedCoupon)}%</span>
+                    <button onClick={() => { setAppliedCoupon(null); setCouponInput(""); }} style={{ background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 10 }}>✕</button>
                   </div>
                 )}
+
                 {/* Totais */}
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: appliedCoupon ? 6 : 14 }}>
-                  <span style={{ color: "#a09080", fontSize: 12 }}>Subtotal</span>
-                  <span style={{ fontSize: 13, color: "#a09080" }}>{fmt(cartTotal)}</span>
+                <div style={{ fontSize: 12, color: "#7a6a6a", marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
+                  <span>Subtotal</span><span>{fmt(cartTotal)}</span>
                 </div>
                 {appliedCoupon && (
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14 }}>
-                    <span style={{ color: "#4ade80", fontSize: 12 }}>Desconto ({couponPct(appliedCoupon)}%)</span>
-                    <span style={{ fontSize: 13, color: "#4ade80" }}>-{fmt(discountAmt)}</span>
+                  <div style={{ fontSize: 12, color: "#4ade80", marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
+                    <span>Desconto</span><span>−{fmt(discountAmt)}</span>
                   </div>
                 )}
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 14, paddingTop: 10, borderTop: "1px solid #2a1f1f" }}>
+                {freteEscolhido && (
+                  <div style={{ fontSize: 12, color: freteEscolhido.base === 0 ? "#4ade80" : "#a09080", marginBottom: 4, display: "flex", justifyContent: "space-between" }}>
+                    <span>Frete ({freteEscolhido.nome})</span>
+                    <span>{freteEscolhido.base === 0 ? "Grátis 🎉" : fmt(freteEscolhido.base)}</span>
+                  </div>
+                )}
+                <div style={{ display: "flex", justifyContent: "space-between", paddingTop: 10, borderTop: "1px solid #2a1f1f", marginBottom: 14 }}>
                   <span style={{ color: "#f5f0e8", fontSize: 14 }}>Total</span>
                   <span style={{ fontSize: 20, color: "#e8b4b4", fontWeight: "bold" }}>{fmt(cartFinal)}</span>
                 </div>
-                <button className="btn-red" onClick={() => { setCartOpen(false); setCheckoutStep(1); setCheckoutOpen(true); }} style={{ width: "100%", padding: "12px", borderRadius: 4, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" }}>Finalizar Pedido →</button>
-                <div style={{ fontSize: 9, color: "#3a2a2a", textAlign: "center", marginTop: 8 }}>Cupons: VINO10 · VINO20 · BEMVINDO</div>
+                <button className="btn-red" onClick={() => { setCartOpen(false); setCheckoutStep(1); setCheckoutOpen(true); }}
+                  style={{ width: "100%", padding: "12px", borderRadius: 4, fontSize: 12, letterSpacing: 2, textTransform: "uppercase" }}>
+                  Finalizar Pedido →
+                </button>
+                <div style={{ fontSize: 9, color: "#3a2a2a", textAlign: "center", marginTop: 8 }}>🔒 Pagamento seguro via Mercado Pago</div>
               </div>
             )}
           </div>
@@ -3220,6 +3880,35 @@ export default function App() {
                 }} style={{ width: "100%", marginTop: 20, padding: "13px", background: "#8b2c2c", border: "none", borderRadius: 4, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: "Georgia,serif", letterSpacing: 2, textTransform: "uppercase" }}>
                   Revisar Pedido →
                 </button>
+
+                {/* 12: Aviso de segurança LGPD + Mercado Pago */}
+                <div style={{ marginTop: 16, background: "linear-gradient(135deg,rgba(16,30,20,.9),rgba(10,20,30,.9))", border: "1px solid rgba(74,222,128,.2)", borderRadius: 10, padding: "14px 16px" }}>
+                  <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
+                    <span style={{ fontSize: 20, flexShrink: 0 }}>🔐</span>
+                    <div>
+                      <div style={{ fontSize: 12, color: "#4ade80", fontWeight: "bold", marginBottom: 3 }}>Seus dados estão protegidos</div>
+                      <div style={{ fontSize: 11, color: "#86efac", lineHeight: 1.6 }}>
+                        Informações coletadas somente para entrega, armazenadas com <strong>criptografia</strong> conforme a <strong>LGPD (Lei nº 13.709/2018)</strong>.
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
+                    <span style={{ fontSize: 20, flexShrink: 0 }}>💳</span>
+                    <div>
+                      <div style={{ fontSize: 12, color: "#60a5fa", fontWeight: "bold", marginBottom: 3 }}>Pagamento via Mercado Pago</div>
+                      <div style={{ fontSize: 11, color: "#93c5fd", lineHeight: 1.6 }}>
+                        Dados de cartão e bancários são processados exclusivamente pelo <strong>Mercado Pago</strong>. Não temos acesso a essas informações.
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ display: "flex", gap: 16, flexWrap: "wrap", paddingTop: 8, borderTop: "1px solid rgba(255,255,255,.06)" }}>
+                    {[["🛡️","SSL 256-bit"],["📋","LGPD"],["🔒","Dados Criptografados"],["✅","Compra Segura"]].map(([ic,lb]) => (
+                      <div key={lb} style={{ display:"flex", alignItems:"center", gap:4, fontSize:10, color:"#6ee7b7" }}>
+                        <span>{ic}</span><span>{lb}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </>
             )}
 
@@ -3399,7 +4088,7 @@ export default function App() {
               <div>
                 <h1 style={{ fontSize: 21, marginBottom: 5 }}>Dashboard</h1>
                 <p style={{ color: "#7a6a6a", fontSize: 12, marginBottom: 24 }}>Visão geral do negócio</p>
-                <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 26 }}>
+                <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 14 }}>
                   {[
                     { label: "Receita Total", value: fmt(totalRevenue), icon: "💰", delta: "+18%", col: "#4ade80" },
                     { label: "Lucro Total", value: fmt(totalProfit), icon: "📈", delta: `Margem ${avgMargin}%`, col: parseFloat(avgMargin) >= 30 ? "#4ade80" : "#fbbf24" },
@@ -3416,6 +4105,31 @@ export default function App() {
                     </div>
                   ))}
                 </div>
+                {/* KPIs de clientes e pedidos */}
+                {(()=>{
+                  const cDb = (() => { try { return JSON.parse(localStorage.getItem("v9_clients_db")||"{}"); } catch { return {}; } })();
+                  const nClients = Object.keys(cDb).length;
+                  const nOrders  = (() => { try { return JSON.parse(localStorage.getItem("v9_orders")||"[]").length; } catch { return 0; } })();
+                  const kpis2 = [
+                    { label:"Clientes Cadastrados", value: nClients, icon:"👥", delta:"contas ativas", col:"#60a5fa" },
+                    { label:"Pedidos Recebidos",    value: Math.max(nOrders, orders.length), icon:"📦", delta:"todos os tempos", col:"#c084fc" },
+                    { label:"Vinhos no Catálogo",  value: wines.length, icon:"🍷", delta:`${wines.filter(w=>w.stock>0).length} com estoque`, col:"#e8b4b4" },
+                  ];
+                  return (
+                    <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:26 }}>
+                      {kpis2.map(k => (
+                        <div key={k.label} style={{ background:"linear-gradient(145deg,#1a1410,#120e0c)", border:"1px solid #2a1f1f", borderRadius:10, padding:16 }}>
+                          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:9 }}>
+                            <span style={{ fontSize:8, letterSpacing:2, color:"#5a4a4a", textTransform:"uppercase" }}>{k.label}</span>
+                            <span style={{ fontSize:17 }}>{k.icon}</span>
+                          </div>
+                          <div style={{ fontSize:24, fontWeight:"bold", color:k.col, marginBottom:2 }}>{k.value}</div>
+                          <div style={{ fontSize:10, color:"#7a6a6a" }}>{k.delta}</div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
                 <div style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, padding: 22, marginBottom: 20 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
                     <h3 style={{ fontSize: 11, letterSpacing: 2, color: "#a09080", textTransform: "uppercase" }}>Receita vs Lucro Mensal</h3>
@@ -3545,7 +4259,7 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Banner Principal (Hero) */}
+                {/* ── Banner Principal (Hero) ── */}
                 <div style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, padding: 22, marginBottom: 22 }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
                     <div style={{ fontSize: 11, letterSpacing: 2, color: "#a09080", textTransform: "uppercase" }}>Banner Principal da Home</div>
@@ -3553,18 +4267,20 @@ export default function App() {
                   </div>
 
                   {/* Live preview */}
-                  <div style={{ background: "linear-gradient(135deg,#1a0505,#2d0f0f,#1a0a05)", borderRadius: 8, padding: "20px 24px", textAlign: "center", marginBottom: 18, position: "relative", overflow: "hidden" }}>
-                    <div style={{ position: "absolute", top: 8, right: 20, fontSize: 60, opacity: .06 }}>🍷</div>
-                    <div style={{ fontSize: 8, letterSpacing: 4, color: "#8b6060", textTransform: "uppercase", marginBottom: 6 }}>{heroBanner.tag}</div>
-                    <div style={{ fontSize: 20, color: "#f5f0e8", fontWeight: "bold", lineHeight: 1.2, marginBottom: 4 }}>
-                      {heroBanner.title}<br /><span style={{ color: "#e8b4b4" }}>{heroBanner.titleAccent}</span>
+                  <div style={{ background: heroBanner.imgDesktop ? `url(${heroBanner.imgDesktop}) center/cover` : "linear-gradient(135deg,#1a0505,#2d0f0f,#1a0a05)", borderRadius: 8, padding: "20px 24px", textAlign: "center", marginBottom: 18, position: "relative", overflow: "hidden", minHeight: 100 }}>
+                    {heroBanner.imgDesktop && <div style={{ position:"absolute", inset:0, background:"rgba(0,0,0,.5)", borderRadius:8 }} />}
+                    <div style={{ position:"relative", zIndex:1 }}>
+                      <div style={{ fontSize: 8, letterSpacing: 4, color: "#8b6060", textTransform: "uppercase", marginBottom: 6 }}>{heroBanner.tag}</div>
+                      <div style={{ fontSize: 20, color: "#f5f0e8", fontWeight: "bold", lineHeight: 1.2, marginBottom: 4 }}>
+                        {heroBanner.title}<br /><span style={{ color: "#e8b4b4" }}>{heroBanner.titleAccent}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: "#a09080", marginBottom: 10 }}>{heroBanner.subtitle}</div>
+                      <span style={{ background: "#8b2c2c", color: "#fff", fontSize: 9, padding: "5px 14px", borderRadius: 3, letterSpacing: 1, textTransform: "uppercase" }}>{heroBanner.ctaLabel}</span>
                     </div>
-                    <div style={{ fontSize: 11, color: "#7a6a6a", marginBottom: 10 }}>{heroBanner.subtitle}</div>
-                    <span style={{ background: "#8b2c2c", color: "#fff", fontSize: 9, padding: "5px 14px", borderRadius: 3, letterSpacing: 1, textTransform: "uppercase" }}>{heroBanner.ctaLabel}</span>
                   </div>
 
                   {/* Fields */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
                     {[
                       ["tag", "Etiqueta acima do título", "Coleção Exclusiva", false],
                       ["ctaLabel", "Texto do botão CTA", "Explorar Catálogo", false],
@@ -3574,113 +4290,98 @@ export default function App() {
                     ].map(([field, label, ph, full]) => (
                       <div key={field} style={full ? { gridColumn: "1/-1" } : {}}>
                         <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>{label}</label>
-                        <input
-                          value={heroBanner[field]}
-                          onChange={e => setHeroBanner(p => ({ ...p, [field]: e.target.value }))}
-                          placeholder={ph}
-                          style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "9px 11px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif", outline: "none" }}
-                        />
+                        <input value={heroBanner[field]} onChange={e => setHeroBanner(p => ({ ...p, [field]: e.target.value }))} placeholder={ph}
+                          style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "9px 11px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif", outline: "none" }} />
                       </div>
                     ))}
                   </div>
-                  <button onClick={() => setHeroBanner(INITIAL_HERO_BANNER)}
-                    style={{ marginTop: 14, padding: "7px 16px", background: "none", border: "1px solid #2a1f1f", borderRadius: 4, color: "#5a4a4a", cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>
-                    ↺ Restaurar padrão
-                  </button>
 
-                  {/* Hero Background Images */}
-                  <div style={{ marginTop: 20, borderTop: "1px solid #2a1f1f", paddingTop: 18 }}>
-                    <div style={{ fontSize: 10, letterSpacing: 2, color: "#8b6060", textTransform: "uppercase", marginBottom: 14 }}>🖼 Imagem de Fundo do Banner</div>
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                      {/* Desktop */}
-                      <div style={{ background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 8, padding: 14 }}>
-                        <div style={{ fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 8 }}>🖥 Desktop</div>
-                        <div style={{ fontSize: 9, color: "#3a2a2a", marginBottom: 10 }}>Recomendado: <strong style={{ color: "#8b6060" }}>1920 × 600 px</strong> · JPG ou WebP</div>
-                        {heroBanner.imgDesktop ? (
-                          <div style={{ position: "relative", marginBottom: 8 }}>
-                            <img src={heroBanner.imgDesktop} alt="bg desktop" style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 5, border: "1px solid #3a2a2a" }} />
-                            <button onClick={() => setHeroBanner(p => ({ ...p, imgDesktop: null }))} style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,.7)", border: "none", color: "#ef4444", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-                          </div>
-                        ) : <div style={{ width: "100%", height: 60, background: "#1a1410", borderRadius: 5, border: "1px dashed #2a1f1f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#3a2a2a", marginBottom: 8 }}>sem imagem — usa gradiente</div>}
-                        <input type="file" accept="image/*" id="heroDesktopInput" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => setHeroBanner(p => ({ ...p, imgDesktop: ev.target.result })); r.readAsDataURL(f); }} />
-                        <button onClick={() => document.getElementById('heroDesktopInput').click()} style={{ width: "100%", padding: "7px", background: "#1a1410", border: "1px solid #3a2f2f", color: "#e8b4b4", borderRadius: 4, cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>📷 Enviar imagem desktop</button>
-                      </div>
-                      {/* Mobile */}
-                      <div style={{ background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 8, padding: 14 }}>
-                        <div style={{ fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 8 }}>📱 Mobile</div>
-                        <div style={{ fontSize: 9, color: "#3a2a2a", marginBottom: 10 }}>Recomendado: <strong style={{ color: "#8b6060" }}>768 × 500 px</strong> · JPG ou WebP</div>
-                        {heroBanner.imgMobile ? (
-                          <div style={{ position: "relative", marginBottom: 8 }}>
-                            <img src={heroBanner.imgMobile} alt="bg mobile" style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 5, border: "1px solid #3a2a2a" }} />
-                            <button onClick={() => setHeroBanner(p => ({ ...p, imgMobile: null }))} style={{ position: "absolute", top: 4, right: 4, background: "rgba(0,0,0,.7)", border: "none", color: "#ef4444", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", fontSize: 11, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
-                          </div>
-                        ) : <div style={{ width: "100%", height: 60, background: "#1a1410", borderRadius: 5, border: "1px dashed #2a1f1f", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#3a2a2a", marginBottom: 8 }}>usa a imagem desktop</div>}
-                        <input type="file" accept="image/*" id="heroMobileInput" style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => setHeroBanner(p => ({ ...p, imgMobile: ev.target.result })); r.readAsDataURL(f); }} />
-                        <button onClick={() => document.getElementById('heroMobileInput').click()} style={{ width: "100%", padding: "7px", background: "#1a1410", border: "1px solid #3a2f2f", color: "#e8b4b4", borderRadius: 4, cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>📷 Enviar imagem mobile</button>
-                      </div>
+                  {/* Imagens de fundo */}
+                  <div style={{ borderTop: "1px solid #2a1f1f", paddingTop: 16, marginBottom: 16 }}>
+                    <div style={{ fontSize: 10, letterSpacing: 2, color: "#8b6060", textTransform: "uppercase", marginBottom: 12 }}>🖼 Imagem de Fundo</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                      {[["Desktop","🖥","imgDesktop","heroDesktopInput","1920×600px"],["Mobile","📱","imgMobile","heroMobileInput","768×500px"]].map(([lbl,ico,field,inputId,rec]) => (
+                        <div key={field} style={{ background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 8, padding: 12 }}>
+                          <div style={{ fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 6 }}>{ico} {lbl}</div>
+                          <div style={{ fontSize: 9, color: "#3a2a2a", marginBottom: 8 }}>Rec: {rec} · JPG/WebP</div>
+                          {heroBanner[field] ? (
+                            <div style={{ position:"relative", marginBottom:8 }}>
+                              <img src={heroBanner[field]} alt={lbl} style={{ width:"100%", height:60, objectFit:"cover", borderRadius:4 }} />
+                              <button onClick={() => setHeroBanner(p => ({ ...p, [field]: null }))}
+                                style={{ position:"absolute", top:3, right:3, background:"rgba(0,0,0,.7)", border:"none", color:"#ef4444", borderRadius:"50%", width:18, height:18, cursor:"pointer", fontSize:10 }}>✕</button>
+                            </div>
+                          ) : (
+                            <div style={{ height:50, background:"#1a1410", border:"1px dashed #2a1f1f", borderRadius:4, display:"flex", alignItems:"center", justifyContent:"center", fontSize:9, color:"#3a2a2a", marginBottom:8 }}>
+                              {field === "imgMobile" ? "usa imagem desktop" : "sem imagem"}
+                            </div>
+                          )}
+                          <input type="file" accept="image/*" id={inputId} style={{ display:"none" }}
+                            onChange={e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => setHeroBanner(p => ({ ...p, [field]: ev.target.result })); r.readAsDataURL(f); e.target.value=""; }} />
+                          <button onClick={() => document.getElementById(inputId).click()}
+                            style={{ width:"100%", padding:"7px", background:"#1a1410", border:"1px solid #3a2f2f", color:"#e8b4b4", borderRadius:4, cursor:"pointer", fontSize:10, fontFamily:"Georgia,serif" }}>
+                            📷 Enviar {lbl}
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                    <div style={{ fontSize: 9, color: "#3a2a2a", marginTop: 10 }}>💡 Se não enviar imagem mobile, o site usa automaticamente a imagem desktop no celular.</div>
+                  </div>
+
+                  <div style={{ display:"flex", gap:10 }}>
+                    <button onClick={() => { saveHero(heroBanner); showToast("✅ Banner principal salvo e publicado na home!"); }}
+                      style={{ padding:"10px 22px", background:"#8b2c2c", border:"none", borderRadius:4, color:"#fff", cursor:"pointer", fontSize:12, fontFamily:"Georgia,serif", letterSpacing:1 }}>
+                      💾 Salvar e Publicar Banner
+                    </button>
+                    <button onClick={() => { setHeroBanner(INITIAL_HERO_BANNER); showToast("Banner restaurado ao padrão."); }}
+                      style={{ padding:"10px 16px", background:"none", border:"1px solid #2a1f1f", borderRadius:4, color:"#5a4a4a", cursor:"pointer", fontSize:10, fontFamily:"Georgia,serif" }}>
+                      ↺ Restaurar padrão
+                    </button>
                   </div>
                 </div>
 
-                {/* Destaques */}
+                {/* ── Carrossel de Destaques ── */}
                 <div style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, padding: 22, marginBottom: 22 }}>
-                  <div style={{ fontSize: 11, letterSpacing: 2, color: "#a09080", textTransform: "uppercase", marginBottom: 14 }}>Carrossel de Destaques</div>
-                  <p style={{ fontSize: 11, color: "#5a4a4a", marginBottom: 16 }}>Selecione os vinhos a aparecer no carrossel de destaques da home:</p>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 10 }}>
-                    {wines.map(w => {
-                      const selected = highlightIds.includes(w.id);
-                      return (
-                        <div key={w.id} onClick={() => setHighlightIds(p => selected ? p.filter(id => id !== w.id) : [...p, w.id])}
-                          style={{ background: selected ? "rgba(139,44,44,.15)" : "#1a1410", border: `1px solid ${selected ? "#8b2c2c" : "#2a1f1f"}`, borderRadius: 8, overflow: "hidden", cursor: "pointer", transition: "all .2s" }}>
-                          <div style={{ width: "100%", aspectRatio: "2/1", overflow: "hidden", position: "relative" }}>
-                            <WineThumb wine={w} height="100%" />
-                            {selected && <div style={{ position: "absolute", top: 4, right: 4, background: "#8b2c2c", borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#fff" }}>✓</div>}
+                  <div style={{ fontSize: 11, letterSpacing: 2, color: "#a09080", textTransform: "uppercase", marginBottom: 8 }}>Carrossel de Destaques</div>
+                  <p style={{ fontSize: 11, color: "#5a4a4a", marginBottom: 14 }}>Selecione os vinhos a aparecer no carrossel de destaques da home:</p>
+                  {wines.length === 0 ? (
+                    <div style={{ textAlign:"center", padding:"24px", color:"#5a4a4a", fontSize:12 }}>Cadastre vinhos para selecioná-los como destaque.</div>
+                  ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(150px,1fr))", gap: 10, marginBottom: 14 }}>
+                      {wines.map(w => {
+                        const sel = highlightIds.includes(w.id);
+                        return (
+                          <div key={w.id} onClick={() => setHighlightIds(p => sel ? p.filter(id => id !== w.id) : [...p, w.id])}
+                            style={{ background: sel ? "rgba(139,44,44,.15)" : "#1a1410", border: `1px solid ${sel ? "#8b2c2c" : "#2a1f1f"}`, borderRadius: 8, overflow: "hidden", cursor: "pointer", transition: "all .2s" }}>
+                            <div style={{ width:"100%", aspectRatio:"2/1", overflow:"hidden", position:"relative" }}>
+                              <WineThumb wine={w} height="100%" />
+                              {sel && <div style={{ position:"absolute", top:4, right:4, background:"#8b2c2c", borderRadius:"50%", width:18, height:18, display:"flex", alignItems:"center", justifyContent:"center", fontSize:10, color:"#fff" }}>✓</div>}
+                            </div>
+                            <div style={{ padding:"7px 9px" }}>
+                              <div style={{ fontSize:10, color:"#f5f0e8", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{w.name}</div>
+                              <div style={{ fontSize:9, color:"#5a4a4a" }}>{w.category}</div>
+                            </div>
                           </div>
-                          <div style={{ padding: "7px 9px" }}>
-                            <div style={{ fontSize: 10, color: "#f5f0e8", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{w.name}</div>
-                            <div style={{ fontSize: 9, color: "#5a4a4a" }}>{w.category}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
+                  )}
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <span style={{ fontSize:10, color:"#4ade80" }}>{highlightIds.length} vinhos selecionados</span>
+                    <button onClick={() => { saveHighlights(highlightIds); showToast("✅ Destaques salvos! Já aparecem na home."); }}
+                      style={{ padding:"9px 20px", background:"#8b2c2c", border:"none", borderRadius:4, color:"#fff", cursor:"pointer", fontSize:12, fontFamily:"Georgia,serif", letterSpacing:1 }}>
+                      💾 Salvar Destaques
+                    </button>
                   </div>
-                  <div style={{ marginTop: 12, fontSize: 10, color: "#4ade80" }}>{highlightIds.length} vinhos em destaque selecionados</div>
                 </div>
 
-                {/* Banners promocionais */}
+                {/* ── Banners Promocionais ── */}
                 <div style={{ fontSize: 11, letterSpacing: 2, color: "#a09080", textTransform: "uppercase", marginBottom: 14 }}>Banners Promocionais</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14, marginBottom: 16 }}>
                   {banners.map((banner) => (
-                    <div key={banner.id} style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: `1px solid ${banner.active ? "#3a2a1a" : "#2a1f1f"}`, borderRadius: 12, overflow: "hidden" }}>
-                      {/* Preview */}
-                      <div style={{ background: banner.bg, padding: "18px 22px", display: "flex", alignItems: "center", gap: 14 }}>
-                        <div style={{ flex: 1 }}>
-                          <span style={{ fontSize: 8, letterSpacing: 2, padding: "2px 8px", border: `1px solid ${banner.accent}50`, color: banner.accent, borderRadius: 2, textTransform: "uppercase" }}>{banner.tag}</span>
-                          <div style={{ fontSize: 15, color: "#f5f0e8", fontWeight: "bold", marginTop: 6 }}>{banner.title}</div>
-                          <div style={{ fontSize: 11, color: "#a09080", marginTop: 3 }}>{banner.subtitle}</div>
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 7, alignItems: "flex-end", flexShrink: 0 }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                            <span style={{ fontSize: 10, color: banner.active ? "#4ade80" : "#5a4a4a" }}>{banner.active ? "● Ativo" : "○ Inativo"}</span>
-                            <button onClick={() => setBanners(p => p.map(b => b.id === banner.id ? {...b, active: !b.active} : b))}
-                              style={{ padding: "5px 12px", background: banner.active ? "#7f1d1d" : "#1a3a1a", border: "none", borderRadius: 4, color: banner.active ? "#fca5a5" : "#4ade80", cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>
-                              {banner.active ? "Desativar" : "Ativar"}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      {/* Info */}
-                      <div style={{ padding: "10px 16px", display: "flex", gap: 16, flexWrap: "wrap", fontSize: 10, color: "#5a4a4a" }}>
-                        <span>CTA: <strong style={{ color: "#a09080" }}>{banner.cta}</strong></span>
-                        <span>Filtro: <strong style={{ color: "#a09080" }}>{banner.targetFilter || "Sem filtro"}</strong></span>
-                        <span>Tema: <strong style={{ color: banner.accent }}>{banner.accent}</strong></span>
-                      </div>
-                    </div>
+                    <BannerEditor key={banner.id} banner={banner} banners={banners} setBanners={setBanners} showToast={showToast} saveBanners={saveBanners} />
                   ))}
                 </div>
-                <div style={{ marginTop: 14, padding: "12px 16px", background: "rgba(139,44,44,.06)", border: "1px solid rgba(139,44,44,.2)", borderRadius: 8, fontSize: 11, color: "#8b6060" }}>
-                  💡 Os banners ativos aparecem em rotação automática na home da loja. Use-os para promover categorias, campanhas sazonais ou novidades.
+                <div style={{ marginTop: 4, padding: "12px 16px", background: "rgba(139,44,44,.06)", border: "1px solid rgba(139,44,44,.2)", borderRadius: 8, fontSize: 11, color: "#8b6060" }}>
+                  💡 Os banners ativos aparecem em rotação automática na home da loja.
                 </div>
               </div>
             )}
@@ -3730,41 +4431,55 @@ export default function App() {
             {/* Pedidos */}
             {adminTab === "orders" && (
               <div>
-                <h1 style={{ fontSize: 21, marginBottom: 5 }}>Pedidos</h1>
-                <p style={{ color: "#7a6a6a", fontSize: 11, marginBottom: 24 }}>{Array.isArray(orders) ? orders.length : 0} pedidos recentes</p>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, flexWrap: "wrap", gap: 10 }}>
+                  <div>
+                    <h1 style={{ fontSize: 21, marginBottom: 3 }}>Pedidos</h1>
+                    <p style={{ color: "#7a6a6a", fontSize: 11 }}>{Array.isArray(orders) ? orders.length : 0} pedido{orders.length !== 1 ? "s" : ""} registrado{orders.length !== 1 ? "s" : ""}</p>
+                  </div>
+                  <button onClick={() => {
+                    try {
+                      const local = JSON.parse(localStorage.getItem("v9_orders") || "[]");
+                      if (local.length > 0) { setOrders(local); showToast(`✅ ${local.length} pedidos carregados!`); }
+                      else showToast("Nenhum pedido no armazenamento local.", "error");
+                    } catch { showToast("Erro ao recarregar.", "error"); }
+                  }} style={{ padding: "8px 16px", background: "#1a3a1a", border: "1px solid #4ade80", borderRadius: 4, color: "#4ade80", cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif" }}>
+                    🔄 Recarregar Pedidos
+                  </button>
+                </div>
+                {orders.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "48px 20px", background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, color: "#5a4a4a" }}>
+                    <div style={{ fontSize: 36, marginBottom: 10 }}>📦</div>
+                    <p style={{ fontSize: 13, marginBottom: 6 }}>Nenhum pedido ainda.</p>
+                    <p style={{ fontSize: 11 }}>Os pedidos finalizados pelos clientes aparecerão aqui automaticamente.</p>
+                  </div>
+                ) : (
                 <div style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, overflow: "auto" }}>
                   <table className="tbl" style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                    <thead><tr style={{ background: "#120e0c" }}>{["Pedido","Cliente","Itens","Total","Data","Status"].map((h) => <th key={h} style={{ padding: "11px 12px", textAlign: "left", fontSize: 8, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", borderBottom: "1px solid #2a1f1f" }}>{h}</th>)}</tr></thead>
+                    <thead><tr style={{ background: "#120e0c" }}>{["#","Cliente","Itens","Total","Data","Status"].map((h) => <th key={h} style={{ padding: "11px 12px", textAlign: "left", fontSize: 8, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", borderBottom: "1px solid #2a1f1f" }}>{h}</th>)}</tr></thead>
                     <tbody>
                       {(Array.isArray(orders) ? orders : []).map((o, i) => (
-                        <tr key={o.id} style={{ borderBottom: "1px solid #1a1410", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,.01)" }}>
-                          <td style={{ padding: "9px 12px", color: "#e8b4b4" }}>{o.id}</td>
+                        <tr key={o.id || i} style={{ borderBottom: "1px solid #1a1410", background: i % 2 === 0 ? "transparent" : "rgba(255,255,255,.01)" }}>
+                          <td style={{ padding: "9px 12px", color: "#e8b4b4", fontSize: 11 }}>{o.id || `#${i+1}`}</td>
                           <td style={{ padding: "9px 12px", color: "#f5f0e8" }}>{o.customer}</td>
                           <td style={{ padding: "9px 12px", color: "#a09080", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{o.items || o.wine}</td>
                           <td style={{ padding: "9px 12px", color: "#e8b4b4" }}>{fmt(o.total)}</td>
                           <td style={{ padding: "9px 12px", color: "#7a6a6a" }}>{o.date}</td>
                           <td style={{ padding: "9px 12px" }}>
-                            <select value={o.status} onChange={async (e) => {
+                            <select value={o.status || "Aguardando"} onChange={async (e) => {
                               const novoStatus = e.target.value;
                               const atualizado = { ...o, status: novoStatus };
-                              setOrders(prev => prev.map(x => x.id === o.id ? atualizado : x));
-                              // Atualiza no Supabase se tiver id numérico
+                              const updated = orders.map(x => (x.id === o.id) ? atualizado : x);
+                              setOrders(updated);
+                              try { localStorage.setItem("v9_orders", JSON.stringify(updated)); } catch {}
                               if (o.id && !String(o.id).startsWith("#")) {
                                 await supaFetch(`/rest/v1/orders?id=eq.${o.id}`, "PATCH", { status: novoStatus });
                               }
-                              // Dispara e-mail ao cliente se tiver e-mail no pedido
                               const clientEmail = o.contact || o.email;
                               if (clientEmail && clientEmail.includes("@")) {
-                                if (novoStatus === "Em trânsito") {
-                                  sendEmail("pedidoTransito", { to_email: clientEmail, to_name: o.customer, store_name: "Vinhos9", order_id: o.id, order_date: o.date });
-                                  showToast(`📧 E-mail "Em trânsito" enviado para ${clientEmail}`);
-                                } else if (novoStatus === "Entregue") {
-                                  sendEmail("pedidoEntregue", { to_email: clientEmail, to_name: o.customer, store_name: "Vinhos9", order_id: o.id, order_total: fmt(o.total), points_earned: Math.floor(o.total) });
-                                  showToast(`📧 E-mail "Entregue" enviado para ${clientEmail}`);
-                                }
-                              } else {
-                                showToast(`Status atualizado para "${novoStatus}"`);
+                                if (novoStatus === "Em trânsito") sendEmail("pedidoTransito", { to_email: clientEmail, to_name: o.customer, store_name: "Vinhos9", order_id: o.id, order_date: o.date });
+                                else if (novoStatus === "Entregue") sendEmail("pedidoEntregue", { to_email: clientEmail, to_name: o.customer, store_name: "Vinhos9", order_id: o.id, order_total: fmt(o.total), points_earned: Math.floor(o.total) });
                               }
+                              showToast(`Status → "${novoStatus}"`);
                             }}
                               style={{ background: o.status === "Entregue" ? "#1a3a1a" : o.status === "Em trânsito" ? "#1a2a3a" : "#2a2a1a", color: o.status === "Entregue" ? "#4ade80" : o.status === "Em trânsito" ? "#60a5fa" : "#fbbf24", border: "none", borderRadius: 10, padding: "3px 10px", fontSize: 10, cursor: "pointer", fontFamily: "Georgia,serif" }}>
                               <option value="Aguardando">Aguardando</option>
@@ -3777,6 +4492,7 @@ export default function App() {
                     </tbody>
                   </table>
                 </div>
+                )}
               </div>
             )}
 
@@ -3880,7 +4596,40 @@ export default function App() {
             {adminTab === "pagamento" && (
               <div style={{ maxWidth: 640 }}>
                 <h1 style={{ fontSize: 21, marginBottom: 5 }}>💳 Gateway de Pagamento</h1>
-                <p style={{ color: "#7a6a6a", fontSize: 11, marginBottom: 24 }}>Configure o gateway que será usado no checkout da loja. Suas chaves ficam salvas localmente.</p>
+                <p style={{ color: "#7a6a6a", fontSize: 11, marginBottom: 24 }}>Configure o gateway e os descontos por forma de pagamento exibidos na loja.</p>
+
+                {/* ── Descontos por forma de pagamento ── */}
+                <div style={{ background:"linear-gradient(145deg,#1a1410,#120e0c)", border:"1px solid #2a1f1f", borderRadius:10, padding:22, marginBottom:22 }}>
+                  <div style={{ fontSize:11, letterSpacing:2, color:"#a09080", textTransform:"uppercase", marginBottom:6 }}>🏷 Descontos por Forma de Pagamento</div>
+                  <p style={{ fontSize:11, color:"#5a4a4a", marginBottom:16, lineHeight:1.6 }}>
+                    Defina o percentual de desconto para cada método. Esses valores aparecem na loja e na página de cada produto.
+                  </p>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:16 }}>
+                    {[
+                      { key:"pix",       icon:"⚡", label:"Pix",        color:"#4ade80" },
+                      { key:"boleto",    icon:"📄", label:"Boleto",     color:"#fbbf24" },
+                      { key:"credito1x", icon:"💳", label:"Cartão 1x",  color:"#e8b4b4" },
+                    ].map(({ key, icon, label, color }) => (
+                      <div key={key} style={{ background:"#120e0c", border:"1px solid #2a1f1f", borderRadius:8, padding:"14px 12px", textAlign:"center" }}>
+                        <div style={{ fontSize:20, marginBottom:6 }}>{icon}</div>
+                        <div style={{ fontSize:12, color:"#f5f0e8", marginBottom:10 }}>{label}</div>
+                        <div style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:5 }}>
+                          <input type="number" min="0" max="30" value={payDescontos[key]}
+                            onChange={e => setPayDescontos(p => ({ ...p, [key]: Math.max(0, Math.min(30, +e.target.value)) }))}
+                            style={{ width:54, background:"#1a1410", border:"1px solid #3a2f2f", borderRadius:4, padding:"7px", color, fontSize:16, fontFamily:"Georgia,serif", textAlign:"center", fontWeight:"bold" }} />
+                          <span style={{ color, fontSize:16, fontWeight:"bold" }}>%</span>
+                        </div>
+                        <div style={{ fontSize:10, marginTop:6, color: payDescontos[key] > 0 ? color : "#5a4a4a" }}>
+                          {payDescontos[key] > 0 ? `-${payDescontos[key]}% OFF` : "Sem desconto"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <button onClick={() => { savePayDescontos(payDescontos); showToast("✅ Descontos salvos! Já visíveis na loja."); }}
+                    style={{ padding:"9px 22px", background:"#8b2c2c", border:"none", borderRadius:4, color:"#fff", cursor:"pointer", fontSize:12, fontFamily:"Georgia,serif", letterSpacing:1 }}>
+                    💾 Salvar Descontos
+                  </button>
+                </div>
 
                 {/* Gateway selector */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(170px,1fr))", gap: 10, marginBottom: 24 }}>
@@ -4033,10 +4782,79 @@ export default function App() {
       {zoomWine && <ImageZoomModal wine={zoomWine} onClose={() => setZoomWine(null)} />}
 
       {page === "store" && !selectedWine && (
-        <footer style={{ background: "#0a0808", borderTop: "1px solid #1a1410", padding: "26px 20px", textAlign: "center" }}>
-          <div style={{ fontSize: 20, marginBottom: 5 }}>🍷</div>
-          <div style={{ fontSize: 13, letterSpacing: 3, color: "#e8b4b4", marginBottom: 5 }}>VINHOS9</div>
-          <p style={{ color: "#3a2a2a", fontSize: 10 }}>© 2026 Vinhos9 Importados · Todos os direitos reservados</p>
+        <footer style={{ background: "#0a0808", borderTop: "1px solid #1a1410", padding: "40px 20px 24px" }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+            {/* Linha de divisão e grade */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: 32, marginBottom: 36 }}>
+
+              {/* Marca */}
+              <div>
+                <div style={{ fontSize: 18, fontWeight: "bold", letterSpacing: 2, color: "#e8b4b4", marginBottom: 8 }}>🍷 VINHOS9</div>
+                <p style={{ fontSize: 12, color: "#4a3a3a", lineHeight: 1.8 }}>Vinhos importados selecionados das melhores regiões vinícolas do mundo.</p>
+              </div>
+
+              {/* 17: Formas de pagamento */}
+              <div>
+                <div style={{ fontSize: 10, letterSpacing: 2, color: "#7a5a5a", textTransform: "uppercase", marginBottom: 12 }}>💳 Pagamento</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                  {[
+                    { icon: "⚡", label: "Pix", desc: payDescontos.pix > 0 ? `${payDescontos.pix}% de desconto` : "Aprovação imediata", color: payDescontos.pix > 0 ? "#4ade80" : "#5a4a4a" },
+                    { icon: "📄", label: "Boleto", desc: payDescontos.boleto > 0 ? `${payDescontos.boleto}% de desconto` : "Vence em 3 dias", color: payDescontos.boleto > 0 ? "#fbbf24" : "#5a4a4a" },
+                    { icon: "💳", label: "Cartão 1x", desc: payDescontos.credito1x > 0 ? `${payDescontos.credito1x}% de desconto` : "Sem acréscimos", color: payDescontos.credito1x > 0 ? "#e8b4b4" : "#5a4a4a" },
+                    { icon: "💳", label: "Até 12x", desc: "Sujeito a juros do cartão", color: "#5a4a4a" },
+                  ].map(({ icon, label, desc, color }) => (
+                    <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 13 }}>{icon}</span>
+                      <div>
+                        <span style={{ fontSize: 12, color: "#a09080" }}>{label}</span>
+                        <span style={{ fontSize: 10, color, marginLeft: 6 }}>{desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: 10, fontSize: 10, color: "#4a3a3a", lineHeight: 1.6 }}>
+                  🔒 Pagamentos processados pelo <strong style={{ color: "#6a5a5a" }}>Mercado Pago</strong>
+                </div>
+              </div>
+
+              {/* Segurança */}
+              <div>
+                <div style={{ fontSize: 10, letterSpacing: 2, color: "#7a5a5a", textTransform: "uppercase", marginBottom: 12 }}>🔐 Segurança</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+                  {[
+                    ["🛡️", "SSL 256-bit", "Conexão criptografada"],
+                    ["📋", "LGPD", "Dados protegidos por lei"],
+                    ["✅", "Site Verificado", "Compra 100% segura"],
+                    ["🏅", "Vinhos originais", "Garantia de autenticidade"],
+                  ].map(([ic, lb, desc]) => (
+                    <div key={lb} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 13 }}>{ic}</span>
+                      <div>
+                        <span style={{ fontSize: 12, color: "#a09080" }}>{lb}</span>
+                        <span style={{ fontSize: 10, color: "#4a3a3a", marginLeft: 6 }}>{desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* 18: Aviso de imagens IA */}
+            <div style={{ borderTop: "1px solid #1a1410", paddingTop: 16, marginBottom: 14 }}>
+              <div style={{ background: "rgba(96,165,250,.05)", border: "1px solid rgba(96,165,250,.15)", borderRadius: 8, padding: "10px 14px", fontSize: 11, color: "#4a5a6a", lineHeight: 1.7 }}>
+                📸 <strong style={{ color: "#5a6a7a" }}>Nota sobre as imagens:</strong> As fotos dos vinhos exibidas neste site são reais, porém podem apresentar pequenas diferenças visuais em relação à embalagem física, pois são aprimoradas com <strong style={{ color: "#5a6a7a" }}>inteligência artificial</strong> para melhor apresentação. O produto entregue é 100% original e certificado.
+              </div>
+            </div>
+
+            {/* Rodapé final */}
+            <div style={{ textAlign: "center", paddingTop: 12 }}>
+              <div style={{ fontSize: 18, marginBottom: 4 }}>🍷</div>
+              <div style={{ fontSize: 12, letterSpacing: 3, color: "#6a4a4a", marginBottom: 6 }}>VINHOS9</div>
+              <p style={{ color: "#2a1a1a", fontSize: 10 }}>
+                © 2026 Vinhos9 Importados · Todos os direitos reservados · Venda proibida para menores de 18 anos
+              </p>
+            </div>
+          </div>
         </footer>
       )}
     </div>
