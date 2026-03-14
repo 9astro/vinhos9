@@ -1354,6 +1354,153 @@ const ClientAccountPanel = ({ wines, addToCart, setSelectedWine, setPage, onClos
 
 
 
+// ── HomeCarousel — carrossel com swipe touch para home ────────────────────────
+const HomeCarousel = ({ items, title, subtitle, accentColor, badge, onSelect, addToCart }) => {
+  const [idx, setIdx] = useState(0);
+  const [animating, setAnimating] = useState(false);
+  const [dir, setDir] = useState(null);
+  const timerRef = useRef(null);
+  const pausedRef = useRef(false);
+  const touchStartX = useRef(null);
+  const touchStartY = useRef(null);
+
+  const [winW, setWinW] = useState(typeof window !== "undefined" ? window.innerWidth : 1024);
+  useEffect(() => {
+    const h = () => setWinW(window.innerWidth);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+
+  const VISIBLE = winW <= 480 ? 2 : winW <= 768 ? 3 : 4;
+  const total = items.length;
+  const maxIdx = Math.max(0, total - VISIBLE);
+
+  const go = useCallback((d) => {
+    if (animating || total <= VISIBLE) return;
+    setDir(d);
+    setAnimating(true);
+    setTimeout(() => {
+      setIdx(prev => {
+        if (d === "r") return prev >= maxIdx ? 0 : prev + 1;
+        return prev <= 0 ? maxIdx : prev - 1;
+      });
+      setAnimating(false);
+      setDir(null);
+    }, 300);
+  }, [animating, maxIdx, total, VISIBLE]);
+
+  useEffect(() => {
+    if (total <= VISIBLE) return;
+    timerRef.current = setInterval(() => { if (!pausedRef.current) go("r"); }, 3500);
+    return () => clearInterval(timerRef.current);
+  }, [go, total, VISIBLE]);
+
+  // Touch swipe
+  const onTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchStartY.current = e.touches[0].clientY;
+    pausedRef.current = true;
+  };
+  const onTouchEnd = (e) => {
+    if (touchStartX.current === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX.current;
+    const dy = Math.abs(e.changedTouches[0].clientY - touchStartY.current);
+    if (Math.abs(dx) > 40 && Math.abs(dx) > dy) {
+      go(dx < 0 ? "r" : "l");
+    }
+    touchStartX.current = null;
+    setTimeout(() => { pausedRef.current = false; }, 1000);
+  };
+
+  const visibleItems = total <= VISIBLE
+    ? items
+    : items.slice(idx, idx + VISIBLE).concat(
+        idx + VISIBLE > total ? items.slice(0, (idx + VISIBLE) % total) : []
+      );
+
+  const dotCount = Math.max(1, total - VISIBLE + 1);
+
+  return (
+    <div style={{ marginBottom: 48 }}
+      onMouseEnter={() => { pausedRef.current = true; }}
+      onMouseLeave={() => { pausedRef.current = false; }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 3, height: 28, background: accentColor, borderRadius: 2, flexShrink: 0 }} />
+          <div>
+            <div style={{ fontSize: 9, letterSpacing: 3, color: "#8b6060", textTransform: "uppercase", marginBottom: 3 }}>{subtitle}</div>
+            <h3 style={{ fontSize: 20, color: accentColor }}>{title}</h3>
+          </div>
+        </div>
+        {total > VISIBLE && (
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ display: "flex", gap: 5 }}>
+              {Array.from({ length: dotCount }).map((_, i) => (
+                <button key={i} onClick={() => { if (!animating) setIdx(i); }}
+                  style={{ width: i === idx ? 18 : 6, height: 6, borderRadius: 3, border: "none", background: i === idx ? accentColor : "#2a1f1f", cursor: "pointer", transition: "all .3s", padding: 0 }} />
+              ))}
+            </div>
+            <button onClick={() => go("l")} style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid #2a1f1f", background: "#1a1410", color: "#a09080", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
+            <button onClick={() => go("r")} style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid #2a1f1f", background: "#1a1410", color: "#a09080", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>›</button>
+          </div>
+        )}
+      </div>
+
+      {/* Track com swipe touch */}
+      <div style={{ overflow: "hidden" }}
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}>
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: `repeat(${Math.min(VISIBLE, total)}, 1fr)`,
+          gap: winW <= 768 ? 10 : 14,
+          transition: animating ? "opacity .3s ease, transform .3s ease" : "none",
+          opacity: animating ? 0.4 : 1,
+          transform: animating ? `translateX(${dir === "r" ? "-14px" : "14px"})` : "none",
+        }}>
+          {visibleItems.map((wine) => {
+            const activePrice = wine.promoPrice || wine.price;
+            return (
+              <div key={wine.id + "-" + idx} onClick={() => onSelect(wine)}
+                style={{ cursor: "pointer", background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 12, overflow: "hidden", transition: "all .25s" }}
+                onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 36px rgba(139,44,44,.3)"; }}
+                onMouseLeave={e => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}>
+                <div style={{ width: "100%", aspectRatio: "1/1", position: "relative", overflow: "hidden" }}>
+                  <WineThumb wine={wine} height="100%" />
+                  <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,transparent 50%,rgba(12,10,9,.8))" }} />
+                  {wine.promoPrice && (
+                    <span style={{ position: "absolute", top: 7, left: 7, background: "#b45309", color: "#fef3c7", fontSize: 9, padding: "2px 6px", borderRadius: 3, fontWeight: "bold" }}>
+                      -{discountPct(wine.price, wine.promoPrice)}%
+                    </span>
+                  )}
+                  {badge && (
+                    <span style={{ position: "absolute", bottom: 7, left: 7, background: badge.bg, color: "#fff", fontSize: 8, padding: "2px 7px", borderRadius: 10, letterSpacing: 1 }}>
+                      {typeof badge.text === "function" ? badge.text(wine) : badge.text}
+                    </span>
+                  )}
+                </div>
+                <div style={{ padding: "10px 10px 12px" }}>
+                  <div style={{ fontSize: 12, color: "#f5f0e8", fontWeight: "bold", marginBottom: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{wine.name}</div>
+                  <div style={{ fontSize: 10, color: "#7a6a6a", marginBottom: 6 }}>{wine.origin}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 8 }}>
+                    <span style={{ fontSize: 15, color: wine.promoPrice ? "#fbbf24" : accentColor, fontWeight: "bold" }}>{fmt(activePrice)}</span>
+                    {wine.promoPrice && <span style={{ fontSize: 10, color: "#5a4a4a", textDecoration: "line-through" }}>{fmt(wine.price)}</span>}
+                  </div>
+                  <button className="btn-red" onClick={e => { e.stopPropagation(); addToCart(wine); }} disabled={wine.stock === 0}
+                    style={{ width: "100%", padding: "7px", borderRadius: 4, fontSize: 10, letterSpacing: 1, background: wine.stock === 0 ? "#2a1f1f" : "#8b2c2c", color: wine.stock === 0 ? "#5a4a4a" : "#fff", cursor: wine.stock === 0 ? "not-allowed" : "pointer" }}>
+                    {wine.stock === 0 ? "Esgotado" : "🛒 Carrinho"}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ── CartFreteSelector — seleção de frete no carrinho com busca de CEP (ViaCEP) ─
 const CartFreteSelector = ({ freteConfig, cartTotal, freteEscolhido, setFreteEscolhido, onCepFill }) => {
   const [cep, setCep] = useState("");
@@ -2982,6 +3129,7 @@ export default function App() {
     <div style={{ fontFamily: "'Georgia','Times New Roman',serif", minHeight: "100vh", background: "#0c0a09", color: "#f5f0e8" }}>
       <style>{`
         *{box-sizing:border-box;margin:0;padding:0}
+        html,body{overflow-x:hidden;max-width:100vw}
 
         /* ── DESKTOP: base font maior ── */
         body,html{font-size:16px}
@@ -3186,7 +3334,7 @@ export default function App() {
 
           {/* 4+5+6: Seções de destaque + botão Ver Todos */}
           {wines.length > 0 && (
-            <div style={{ maxWidth: 1200, margin: "0 auto", padding: "36px 36px 0" }}>
+            <div style={{ maxWidth: 1200, margin: "0 auto", padding: "36px 20px 0" }}>
 
               {/* 6: Botão Ver Todos */}
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 36, flexWrap: "wrap", gap: 16 }}>
@@ -3200,99 +3348,35 @@ export default function App() {
                 </button>
               </div>
 
-              {/* 4: Recém Chegados — 9 últimos cadastrados */}
+              {/* 4: Recém Chegados — carrossel animado com swipe */}
               {wines.length > 0 && (
-                <div style={{ marginBottom: 48 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-                    <div style={{ width: 3, height: 28, background: "#e8b4b4", borderRadius: 2 }} />
-                    <div>
-                      <div style={{ fontSize: 9, letterSpacing: 3, color: "#8b6060", textTransform: "uppercase", marginBottom: 3 }}>Novidades</div>
-                      <h3 style={{ fontSize: 20, color: "#e8b4b4" }}>🆕 Recém Chegados</h3>
-                    </div>
-                  </div>
-                  <div className="home-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 16 }}>
-                    {[...wines].reverse().slice(0, 9).map((wine) => {
-                      const activePrice = wine.promoPrice || wine.price;
-                      return (
-                        <div key={wine.id} className="wine-card" onClick={() => setSelectedWine(wine)}
-                          style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 12, overflow: "hidden", cursor: "pointer", transition: "all .25s", position: "relative" }}>
-                          <div style={{ width: "100%", aspectRatio: "1/1", position: "relative", overflow: "hidden" }}>
-                            <WineThumb wine={wine} height="100%" />
-                            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,transparent 55%,rgba(12,10,9,.8))" }} />
-                            {wine.promoPrice && <span style={{ position: "absolute", top: 8, left: 8, background: "#b45309", color: "#fef3c7", fontSize: 9, padding: "2px 6px", borderRadius: 3, fontWeight: "bold" }}>-{discountPct(wine.price, wine.promoPrice)}%</span>}
-                            <span style={{ position: "absolute", top: 8, right: 8, background: "#8b2c2c", color: "#fff", fontSize: 8, padding: "2px 6px", borderRadius: 3 }}>{wine.category}</span>
-                            {/* Badge Novo */}
-                            <span style={{ position: "absolute", bottom: 8, left: 8, background: "rgba(96,165,250,.85)", color: "#fff", fontSize: 8, padding: "2px 7px", borderRadius: 10, letterSpacing: 1 }}>NOVO</span>
-                          </div>
-                          <div style={{ padding: "12px 12px 14px" }}>
-                            <div style={{ fontSize: 13, color: "#f5f0e8", fontWeight: "bold", marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{wine.name}</div>
-                            <div style={{ fontSize: 10, color: "#7a6a6a", marginBottom: 6 }}>{wine.origin} · {wine.year}</div>
-                            <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: 10 }}>
-                              <span style={{ fontSize: 16, color: wine.promoPrice ? "#fbbf24" : "#e8b4b4", fontWeight: "bold" }}>{fmt(activePrice)}</span>
-                              {wine.promoPrice && <span style={{ fontSize: 10, color: "#5a4a4a", textDecoration: "line-through" }}>{fmt(wine.price)}</span>}
-                            </div>
-                            <button className="btn-red" onClick={(e) => { e.stopPropagation(); addToCart(wine); }} disabled={wine.stock === 0}
-                              style={{ width: "100%", padding: "8px", borderRadius: 4, fontSize: 10, letterSpacing: 1, background: wine.stock === 0 ? "#2a1f1f" : "#8b2c2c", color: wine.stock === 0 ? "#5a4a4a" : "#fff", cursor: wine.stock === 0 ? "not-allowed" : "pointer" }}>
-                              {wine.stock === 0 ? "Esgotado" : "🛒 Carrinho"}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                <HomeCarousel
+                  items={[...wines].reverse().slice(0, 9)}
+                  title="🆕 Recém Chegados"
+                  subtitle="Novidades"
+                  accentColor="#e8b4b4"
+                  badge={{ bg: "rgba(96,165,250,.85)", text: "NOVO" }}
+                  onSelect={setSelectedWine}
+                  addToCart={addToCart}
+                />
               )}
 
-              {/* 5: Mais Vendidos — 9 com maior sales */}
+              {/* 5: Mais Vendidos — carrossel animado com swipe */}
               {wines.filter(w => w.sales > 0).length > 0 && (
-                <div style={{ marginBottom: 48 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-                    <div style={{ width: 3, height: 28, background: "#fbbf24", borderRadius: 2 }} />
-                    <div>
-                      <div style={{ fontSize: 9, letterSpacing: 3, color: "#b45309", textTransform: "uppercase", marginBottom: 3 }}>Favoritos dos clientes</div>
-                      <h3 style={{ fontSize: 20, color: "#fbbf24" }}>🏆 Mais Vendidos</h3>
-                    </div>
-                  </div>
-                  <div className="home-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 16 }}>
-                    {[...wines].sort((a, b) => (b.sales || 0) - (a.sales || 0)).slice(0, 9).map((wine, rank) => {
-                      const activePrice = wine.promoPrice || wine.price;
-                      return (
-                        <div key={wine.id} className="wine-card" onClick={() => setSelectedWine(wine)}
-                          style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 12, overflow: "hidden", cursor: "pointer", transition: "all .25s", position: "relative" }}>
-                          <div style={{ width: "100%", aspectRatio: "1/1", position: "relative", overflow: "hidden" }}>
-                            <WineThumb wine={wine} height="100%" />
-                            <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,transparent 55%,rgba(12,10,9,.8))" }} />
-                            {wine.promoPrice && <span style={{ position: "absolute", top: 8, left: 8, background: "#b45309", color: "#fef3c7", fontSize: 9, padding: "2px 6px", borderRadius: 3, fontWeight: "bold" }}>-{discountPct(wine.price, wine.promoPrice)}%</span>}
-                            {/* Badge de ranking */}
-                            {rank < 3 && (
-                              <span style={{ position: "absolute", top: 8, right: 8, background: ["#ffd700","#c0c0c0","#cd7f32"][rank], color: "#0c0a09", fontSize: 10, padding: "2px 8px", borderRadius: 10, fontWeight: "bold" }}>
-                                {["🥇","🥈","🥉"][rank]}
-                              </span>
-                            )}
-                            <span style={{ position: "absolute", bottom: 8, left: 8, background: "rgba(180,83,9,.85)", color: "#fff", fontSize: 8, padding: "2px 7px", borderRadius: 10, letterSpacing: 1 }}>{wine.sales} vendas</span>
-                          </div>
-                          <div style={{ padding: "12px 12px 14px" }}>
-                            <div style={{ fontSize: 13, color: "#f5f0e8", fontWeight: "bold", marginBottom: 3, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{wine.name}</div>
-                            <div style={{ fontSize: 10, color: "#7a6a6a", marginBottom: 6 }}>{wine.origin} · {wine.year}</div>
-                            <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: 10 }}>
-                              <span style={{ fontSize: 16, color: wine.promoPrice ? "#fbbf24" : "#e8b4b4", fontWeight: "bold" }}>{fmt(activePrice)}</span>
-                              {wine.promoPrice && <span style={{ fontSize: 10, color: "#5a4a4a", textDecoration: "line-through" }}>{fmt(wine.price)}</span>}
-                            </div>
-                            <button className="btn-red" onClick={(e) => { e.stopPropagation(); addToCart(wine); }} disabled={wine.stock === 0}
-                              style={{ width: "100%", padding: "8px", borderRadius: 4, fontSize: 10, letterSpacing: 1, background: wine.stock === 0 ? "#2a1f1f" : "#8b2c2c", color: wine.stock === 0 ? "#5a4a4a" : "#fff", cursor: wine.stock === 0 ? "not-allowed" : "pointer" }}>
-                              {wine.stock === 0 ? "Esgotado" : "🛒 Carrinho"}
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
+                <HomeCarousel
+                  items={[...wines].sort((a, b) => (b.sales || 0) - (a.sales || 0)).slice(0, 9)}
+                  title="🏆 Mais Vendidos"
+                  subtitle="Favoritos dos clientes"
+                  accentColor="#fbbf24"
+                  badge={{ bg: "rgba(180,83,9,.85)", text: (wine) => `${wine.sales} vendas` }}
+                  onSelect={setSelectedWine}
+                  addToCart={addToCart}
+                />
               )}
             </div>
           )}
 
-          {/* Catálogo */}
+          {/* Catálogo */}}
           <div id="catalog" className="cat-pad" style={{ padding: "32px 36px 0", maxWidth: 1200, margin: "0 auto" }}>
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 9, letterSpacing: 4, color: "#8b6060", textTransform: "uppercase", marginBottom: 4 }}>Nosso Catálogo</div>
