@@ -2962,8 +2962,7 @@ export default function App() {
     const base = { ...newWine, price: +newWine.price, costPrice: +newWine.costPrice || 0, promoPrice: newWine.promoPrice ? +newWine.promoPrice : null, stock: +newWine.stock || 0, year: +newWine.year || "", sales: 0, rating: 4.5 };
     const saved = await dbAddWine(base);
     if (saved) {
-      setWines((p) => [saved, ...p]); // vai para o INÍCIO da lista
-      setAdmWinePage(1);              // volta para a página 1 para ver o novo vinho
+      setWines((p) => [...p, saved]);
       showToast("Vinho cadastrado e salvo no banco! ✅");
     } else {
       showToast("Erro ao salvar no banco. Verifique a conexão Supabase.", "error");
@@ -3100,169 +3099,21 @@ export default function App() {
     return () => clearTimeout(t);
   }, [filter, countryFilter, search, sortBy, priceRange[0], priceRange[1]]);
 
-  // ── SEO completo: 10, 7, 4, 5, 3, 9, 2, 1, 8, 6 ──────────────────────────
+  // SEO: update title and keywords meta when product is selected
   useEffect(() => {
-    const setMeta = (sel, attr, val) => {
-      let el = document.querySelector(sel);
-      if (!el) {
-        el = document.createElement("meta");
-        const parts = sel.replace("meta[","").replace("]","").split("=");
-        el.setAttribute(parts[0], parts[1].replace(/"/g,""));
-        document.head.appendChild(el);
-      }
-      el.setAttribute(attr, val);
-    };
-    const setLink = (rel, href) => {
-      let el = document.querySelector(`link[rel="${rel}"]`);
-      if (!el) { el = document.createElement("link"); el.rel = rel; document.head.appendChild(el); }
-      el.href = href;
-    };
-    const removeScript = (id) => { const el = document.getElementById(id); if (el) el.remove(); };
-    const addScript = (id, content) => {
-      removeScript(id);
-      const s = document.createElement("script");
-      s.type = "application/ld+json";
-      s.id = id;
-      s.textContent = content;
-      document.head.appendChild(s);
-    };
-
-    const BASE_URL = window.location.origin + window.location.pathname.replace(/\/$/, "");
-    const STORE_NAME = "Vinhos9";
-    const STORE_DESC = "Vinhos importados selecionados das melhores regiões vinícolas do mundo. Tinto, branco, espumante e rosé com entrega para todo o Brasil.";
-    const STORE_LOGO = `${BASE_URL}/logo.png`;
-
     if (selectedWine) {
-      const w = selectedWine;
-      const price = w.promoPrice || w.price;
-      const productUrl = `${BASE_URL}?produto=${w.id}`;
-      const img = w.img || STORE_LOGO;
-      const fullDesc = w.description || `${w.name} — ${w.category} de ${w.origin}. Disponível na Vinhos9 com entrega para todo o Brasil.`;
-      const keywords = [w.name, w.origin, w.region, w.category, w.grapes, w.keywords, `comprar ${w.category?.toLowerCase()}`, `vinho importado ${w.origin}`].filter(Boolean).join(", ");
-
-      // 10: title
-      document.title = `${w.name}${w.year ? ` (${w.year})` : ""} — ${STORE_NAME}`;
-
-      // 9: meta keywords e description
-      setMeta('meta[name="description"]', "content", fullDesc);
-      setMeta('meta[name="keywords"]',    "content", keywords);
-
-      // 5: canonical
-      setLink("canonical", productUrl);
-
-      // 3: Open Graph
-      setMeta('meta[property="og:type"]',         "content", "product");
-      setMeta('meta[property="og:title"]',        "content", `${w.name}${w.year ? ` (${w.year})` : ""}`);
-      setMeta('meta[property="og:description"]',  "content", fullDesc);
-      setMeta('meta[property="og:url"]',          "content", productUrl);
-      setMeta('meta[property="og:image"]',        "content", img);
-      setMeta('meta[property="og:site_name"]',    "content", STORE_NAME);
-      setMeta('meta[property="product:price:amount"]',   "content", String(price));
-      setMeta('meta[property="product:price:currency"]', "content", "BRL");
-
-      // 4: Twitter Card
-      setMeta('meta[name="twitter:card"]',        "content", "summary_large_image");
-      setMeta('meta[name="twitter:title"]',       "content", `${w.name}${w.year ? ` (${w.year})` : ""}`);
-      setMeta('meta[name="twitter:description"]', "content", fullDesc);
-      setMeta('meta[name="twitter:image"]',       "content", img);
-
-      // 1: Schema.org Product
-      addScript("schema-product", JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "Product",
-        "name": w.name,
-        "description": fullDesc,
-        "image": img,
-        "url": productUrl,
-        "brand": { "@type": "Brand", "name": w.origin || STORE_NAME },
-        "category": `Vinhos > ${w.category}`,
-        "offers": {
-          "@type": "Offer",
-          "priceCurrency": "BRL",
-          "price": String(price),
-          "availability": w.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-          "url": productUrl,
-          "seller": { "@type": "Organization", "name": STORE_NAME }
-        },
-        ...(w.rating ? {
-          "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": String(w.rating),
-            "bestRating": "5",
-            "worstRating": "1",
-            "ratingCount": String(w.sales > 0 ? w.sales : 1)
-          }
-        } : {}),
-        // 8: BreadcrumbList
-        "breadcrumb": {
-          "@type": "BreadcrumbList",
-          "itemListElement": [
-            { "@type": "ListItem", "position": 1, "name": STORE_NAME, "item": BASE_URL },
-            { "@type": "ListItem", "position": 2, "name": w.category,  "item": `${BASE_URL}?categoria=${w.category}` },
-            { "@type": "ListItem", "position": 3, "name": w.name,      "item": productUrl }
-          ]
-        }
-      }));
-      removeScript("schema-org");
-      removeScript("schema-sitemap");
-
+      document.title = `${selectedWine.name} ${selectedWine.year ? '(' + selectedWine.year + ')' : ''} — Vinhos9`;
+      let meta = document.querySelector('meta[name="keywords"]');
+      if (!meta) { meta = document.createElement('meta'); meta.name = "keywords"; document.head.appendChild(meta); }
+      const kw = [selectedWine.name, selectedWine.origin, selectedWine.region, selectedWine.category, selectedWine.grapes, selectedWine.keywords].filter(Boolean).join(', ');
+      meta.content = kw;
+      let desc = document.querySelector('meta[name="description"]');
+      if (!desc) { desc = document.createElement('meta'); desc.name = "description"; document.head.appendChild(desc); }
+      desc.content = selectedWine.description || `${selectedWine.name} — ${selectedWine.category} de ${selectedWine.origin}. Disponível na Vinhos9.`;
     } else {
-      // Home / catálogo
-      document.title = `${STORE_NAME} — Vinhos Importados de Excelência`;
-
-      // 10: meta description da home
-      setMeta('meta[name="description"]', "content", STORE_DESC);
-      setMeta('meta[name="keywords"]',    "content", "vinhos importados, vinho tinto, vinho branco, espumante, rosé, comprar vinho online, vinho argentino, vinho chileno, vinho francês, vinho português, harmonização");
-
-      // 5: canonical da home
-      setLink("canonical", BASE_URL);
-
-      // 3: Open Graph da home
-      setMeta('meta[property="og:type"]',        "content", "website");
-      setMeta('meta[property="og:title"]',       "content", `${STORE_NAME} — Vinhos Importados de Excelência`);
-      setMeta('meta[property="og:description"]', "content", STORE_DESC);
-      setMeta('meta[property="og:url"]',         "content", BASE_URL);
-      setMeta('meta[property="og:image"]',       "content", STORE_LOGO);
-      setMeta('meta[property="og:site_name"]',   "content", STORE_NAME);
-
-      // 4: Twitter Card da home
-      setMeta('meta[name="twitter:card"]',        "content", "summary_large_image");
-      setMeta('meta[name="twitter:title"]',       "content", `${STORE_NAME} — Vinhos Importados de Excelência`);
-      setMeta('meta[name="twitter:description"]', "content", STORE_DESC);
-      setMeta('meta[name="twitter:image"]',       "content", STORE_LOGO);
-
-      // 2: Schema.org Organization
-      addScript("schema-org", JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": STORE_NAME,
-        "url": BASE_URL,
-        "logo": STORE_LOGO,
-        "description": STORE_DESC,
-        "contactPoint": { "@type": "ContactPoint", "contactType": "customer service", "availableLanguage": "Portuguese" }
-      }));
-
-      // 6: Sitemap dinâmico via WebSite + SearchAction (sitelinks searchbox)
-      addScript("schema-sitemap", JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": STORE_NAME,
-        "url": BASE_URL,
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": { "@type": "EntryPoint", "urlTemplate": `${BASE_URL}?busca={search_term_string}` },
-          "query-input": "required name=search_term_string"
-        }
-      }));
-      removeScript("schema-product");
+      document.title = "Vinhos9 — Vinhos Importados de Excelência";
     }
-
-    // 7: robots meta (sempre)
-    setMeta('meta[name="robots"]', "content", "index, follow, max-image-preview:large");
-    setMeta('meta[name="viewport"]', "content", "width=device-width, initial-scale=1");
-
-  }, [selectedWine, wines]);
-  // ───────────────────────────────────────────────────────────────────────────
+  }, [selectedWine]);
   const relatedWines = selectedWine ? (() => {
     const sameCategory = wines.filter((w) => w.category === selectedWine.category && w.id !== selectedWine.id);
     if (sameCategory.length >= 3) return sameCategory;
@@ -3281,7 +3132,7 @@ export default function App() {
         html,body{overflow-x:hidden;max-width:100vw}
 
         /* ── DESKTOP: base font maior ── */
-        body,html{font-size:18px}
+        body,html{font-size:16px}
         p,span,div,li,td,th,label,input,select,textarea,button{font-size:inherit}
 
         ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#1a1410}::-webkit-scrollbar-thumb{background:#8b2c2c;border-radius:3px}
@@ -3292,20 +3143,14 @@ export default function App() {
         @keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
         .wine-card{transition:all .3s ease;cursor:pointer}
         .wine-card:hover{transform:translateY(-6px);box-shadow:0 20px 60px rgba(139,44,44,.35)!important}
-        .wine-card .wc-name{font-size:15px;color:#f5f0e8;font-weight:bold}
-        .wine-card .wc-origin{font-size:12px;color:#7a6a6a}
-        .wine-card .wc-desc{font-size:12px;color:#7a6a6a;line-height:1.5}
-        .wine-card .wc-price{font-size:18px;font-weight:bold}
-        .wine-card .wc-old-price{font-size:11px;color:#5a4a4a;text-decoration:line-through}
-        .wine-card .wc-stock{font-size:11px;color:#5a4a4a}
-        .btn-red{background:#8b2c2c;border:none;color:#fff;cursor:pointer;font-family:Georgia,serif;transition:background .2s;font-size:15px!important}
+        .btn-red{background:#8b2c2c;border:none;color:#fff;cursor:pointer;font-family:Georgia,serif;transition:background .2s;font-size:14px!important}
         .btn-red:hover{background:#a83232!important}
-        .btn-ghost{background:transparent;border:1px solid #2a1f1f;color:#8a7a7a;cursor:pointer;font-family:Georgia,serif;transition:all .2s;font-size:15px!important}
+        .btn-ghost{background:transparent;border:1px solid #2a1f1f;color:#8a7a7a;cursor:pointer;font-family:Georgia,serif;transition:all .2s;font-size:14px!important}
         .btn-ghost:hover{border-color:#6a5a5a!important;color:#b0a090!important}
-        .nav-link{cursor:pointer;font-size:16px!important;letter-spacing:2px;text-transform:uppercase;transition:color .2s}
+        .nav-link{cursor:pointer;font-size:15px!important;letter-spacing:2px;text-transform:uppercase;transition:color .2s}
         .nav-link:hover{color:#e8b4b4!important}
         .adm-tab:hover{background:rgba(139,44,44,.3)!important}
-        input,select,textarea{outline:none;font-size:15px!important}
+        input,select,textarea{outline:none;font-size:14px!important}
         input:focus,select:focus,textarea:focus{border-color:#8b2c2c!important}
         .scroll-row{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px}
         .scroll-row::-webkit-scrollbar{height:4px}
@@ -3324,85 +3169,39 @@ export default function App() {
         .adm-sidebar button{font-size:13px!important;color:#c0a8a8!important}
         .adm-sidebar button[style*="color:#e8b4b4"]{color:#e8b4b4!important}
 
-        /* ── MOBILE: cores claras via variável customizada ── */
         @media(max-width:768px){
-          :root{
-            --txt-dim: #b0a0a0;
-            --txt-muted: #a09090;
-            --txt-faint: #888080;
-          }
-        }
-
-        @media(max-width:768px){
-          /* ── MOBILE: fontes maiores e textos mais claros ── */
-          body,html{font-size:16px}
-
-          /* Clarear todas as cores de texto escuras no mobile */
-          [style*="color: #5a4a4a"],[style*="color:#5a4a4a"]{color:#9a8a8a!important}
-          [style*="color: #7a6a6a"],[style*="color:#7a6a6a"]{color:#b0a0a0!important}
-          [style*="color: #a09080"],[style*="color:#a09080"]{color:#c8b8b0!important}
-          [style*="color: #3a2a2a"],[style*="color:#3a2a2a"]{color:#8a7a7a!important}
-          [style*="color: #4a3a3a"],[style*="color:#4a3a3a"]{color:#9a8a8a!important}
-          [style*="color: #8b6060"],[style*="color:#8b6060"]{color:#c09090!important}
-
+          /* ── MOBILE: fontes maiores ── */
+          body,html{font-size:15px}
           .desktop-nav{display:none!important}
           .mobile-nav{display:flex!important}
-          .hero-title{font-size:28px!important}
-          .hero-sec{height:280px!important}
-
-          /* Catálogo mobile — cards maiores com fonte legível */
-          .catalog-grid{grid-template-columns:repeat(2,1fr)!important;gap:12px!important}
+          .hero-title{font-size:30px!important}
+          .hero-sec{height:300px!important}
+          .catalog-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))!important;gap:14px!important}
           .home-grid{grid-template-columns:repeat(2,1fr)!important;gap:12px!important}
-          .cat-pad{padding:16px 14px 0!important}
+          .cat-pad{padding:18px 16px 0!important}
           .filters-row{flex-direction:column!important;gap:10px!important}
           .cat-btns{flex-wrap:wrap!important;gap:8px!important}
-
-          /* Botões */
-          .btn-red,.btn-ghost{font-size:15px!important;padding:11px 18px!important}
-          .nav-link{font-size:15px!important}
-          input,select,textarea{font-size:16px!important}
-
-          /* Textos globais no mobile */
-          p{font-size:14px!important;color:#c8b8b0!important;line-height:1.7!important}
-          h1{font-size:22px!important;color:#f5f0e8!important}
-          h2{font-size:19px!important;color:#f0e8e8!important}
-          h3{font-size:17px!important}
-          label{font-size:13px!important;color:#c0b0b0!important}
-          span{color:inherit}
-
-          /* Cards de vinho — nome, origem, preço mais legíveis */
-          .wine-card h3{font-size:14px!important;color:#f5f0e8!important}
-          .wine-card .wc-name{font-size:14px!important;color:#f0e8e8!important}
-          .wine-card .wc-origin{font-size:12px!important;color:#b0a0a0!important}
-          .wine-card .wc-desc{font-size:12px!important;color:#a09090!important}
-          .wine-card .wc-price{font-size:18px!important}
-          .wine-card .wc-old-price{font-size:11px!important;color:#8a7a7a!important}
-          .wine-card .wc-stock{font-size:11px!important;color:#a09090!important}
-
-          /* Textos gerais de apoio — clarear no mobile */
-          .txt-muted{color:#b0a0a0!important;font-size:13px!important}
-          .txt-dim{color:#a09090!important}
-          .txt-faint{color:#888080!important}
-
-          /* ADM */
           .adm-layout{flex-direction:column!important}
           .adm-sidebar{width:100%!important;flex-direction:row!important;display:flex!important;overflow-x:auto!important;padding:0!important;border-right:none!important;border-bottom:1px solid #2a1f1f!important;position:static!important;align-items:center!important}
           .adm-sidebar>div:first-child{display:none!important}
           .adm-sidebar>div.adm-tabs-wrap{display:contents!important;flex:1!important}
           .adm-sidebar>div.adm-sair-wrap{flex-shrink:0!important;padding:4px 8px!important;border-left:1px solid #2a1f1f!important}
           .adm-sidebar button{white-space:nowrap!important;border-left:none!important;border-bottom:3px solid transparent!important;padding:12px 14px!important;font-size:14px!important}
-          .adm-content{padding:16px 12px!important;font-size:15px!important}
+          .adm-content{padding:18px 14px!important;font-size:15px!important}
           .kpi-grid{grid-template-columns:repeat(2,1fr)!important}
           .form-grid{grid-template-columns:1fr!important}
+          @media(min-width:480px) and (max-width:768px){
+            .form-grid{grid-template-columns:1fr 1fr!important}
+          }
           .tbl{font-size:13px!important}
           .tbl td,.tbl th{padding:10px 10px!important}
           .detail-flex{flex-direction:column!important}
           .detail-img{width:100%!important;flexShrink:unset!important}
           .cart-panel{width:100%!important}
           .promo-banner{flex-direction:column!important;gap:12px!important}
-        }
-        @media(min-width:480px) and (max-width:768px){
-          .form-grid{grid-template-columns:1fr 1fr!important}
+          input,select,textarea{font-size:16px!important}
+          .btn-red,.btn-ghost{font-size:15px!important;padding:12px 20px!important}
+          .nav-link{font-size:16px!important}
         }
       `}</style>
 
@@ -3509,7 +3308,7 @@ export default function App() {
                 </div>
                 <div className="scroll-row">
                   {promoWines.map((wine) => (
-                    <div key={wine.id} onClick={() => { setSelectedWine(wine); window.scrollTo({ top: 0, behavior: "smooth" }); }} style={{ cursor: "pointer", background: "linear-gradient(145deg,#1e1500,#150e00)", border: "1px solid #3a2a00", borderRadius: 12, overflow: "hidden", flexShrink: 0, width: 200, transition: "all .25s" }}
+                    <div key={wine.id} onClick={() => setSelectedWine(wine)} style={{ cursor: "pointer", background: "linear-gradient(145deg,#1e1500,#150e00)", border: "1px solid #3a2a00", borderRadius: 12, overflow: "hidden", flexShrink: 0, width: 200, transition: "all .25s" }}
                       onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-4px)"; e.currentTarget.style.boxShadow = "0 12px 36px rgba(180,83,9,.25)"; }}
                       onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; }}>
                       <div style={{ width: "100%", aspectRatio: "1/1", position: "relative", overflow: "hidden" }}>
@@ -3549,15 +3348,15 @@ export default function App() {
                 </button>
               </div>
 
-              {/* 4: Recém Chegados — carrossel animado com swipe, 6 itens aleatórios */}
+              {/* 4: Recém Chegados — carrossel animado com swipe */}
               {wines.length > 0 && (
                 <HomeCarousel
-                  items={[...wines].sort(() => Math.random() - 0.5).slice(0, 6)}
+                  items={[...wines].reverse().slice(0, 9)}
                   title="🆕 Recém Chegados"
                   subtitle="Novidades"
                   accentColor="#e8b4b4"
                   badge={{ bg: "rgba(96,165,250,.85)", text: "NOVO" }}
-                  onSelect={(wine) => { setSelectedWine(wine); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  onSelect={setSelectedWine}
                   addToCart={addToCart}
                 />
               )}
@@ -3570,7 +3369,7 @@ export default function App() {
                   subtitle="Favoritos dos clientes"
                   accentColor="#fbbf24"
                   badge={{ bg: "rgba(180,83,9,.85)", text: (wine) => `${wine.sales} vendas` }}
-                  onSelect={(wine) => { setSelectedWine(wine); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+                  onSelect={setSelectedWine}
                   addToCart={addToCart}
                 />
               )}
@@ -3703,7 +3502,7 @@ export default function App() {
                 const activePrice = wine.promoPrice || wine.price;
                 const isWishlisted = wishlist.includes(wine.id);
                 return (
-                  <div key={wine.id} className="wine-card" onClick={() => { setSelectedWine(wine); window.scrollTo({ top: 0, behavior: "smooth" }); }} style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 12, overflow: "hidden", animation: `fadeIn .4s ease ${i * .05}s both`, position: "relative" }}>
+                  <div key={wine.id} className="wine-card" onClick={() => setSelectedWine(wine)} style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 12, overflow: "hidden", animation: `fadeIn .4s ease ${i * .05}s both`, position: "relative" }}>
                     {/* Imagem quadrada 1:1 */}
                     <div style={{ width: "100%", aspectRatio: "1/1", position: "relative", overflow: "hidden" }}>
                       <WineThumb wine={wine} height="100%" />
@@ -3720,16 +3519,16 @@ export default function App() {
                       </div>
                     </div>
                     <div style={{ padding: "14px 14px 16px" }}>
-                      <h3 className="wc-name" style={{ fontSize: 14, color: "#f5f0e8", marginBottom: 4 }}>{wine.name}</h3>
+                      <h3 style={{ fontSize: 14, color: "#f5f0e8", marginBottom: 4 }}>{wine.name}</h3>
                       <div style={{ marginBottom: 6 }}><Stars rating={wine.rating} /></div>
-                      <p className="wc-desc" style={{ fontSize: 11, color: "#7a6a6a", lineHeight: 1.5, marginBottom: 8, minHeight: 34 }}>{wine.description?.slice(0, 70)}…</p>
+                      <p style={{ fontSize: 11, color: "#7a6a6a", lineHeight: 1.5, marginBottom: 8, minHeight: 34 }}>{wine.description?.slice(0, 70)}…</p>
                       {/* Low stock badge */}
                       {wine.stock <= 3 && <div style={{ marginBottom: 8 }}><LowStockBadge stock={wine.stock} /></div>}
                       <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 }}>
-                        <span className="wc-price" style={{ fontSize: 17, color: wine.promoPrice ? "#fbbf24" : "#e8b4b4", fontWeight: "bold" }}>{fmt(activePrice)}</span>
-                        {wine.promoPrice && <span className="wc-old-price" style={{ fontSize: 10, color: "#5a4a4a", textDecoration: "line-through" }}>{fmt(wine.price)}</span>}
+                        <span style={{ fontSize: 17, color: wine.promoPrice ? "#fbbf24" : "#e8b4b4", fontWeight: "bold" }}>{fmt(activePrice)}</span>
+                        {wine.promoPrice && <span style={{ fontSize: 10, color: "#5a4a4a", textDecoration: "line-through" }}>{fmt(wine.price)}</span>}
                       </div>
-                      <div className="wc-stock" style={{ fontSize: 9, color: "#5a4a4a", marginBottom: 12 }}>{wine.stock > 0 ? `${wine.stock} em estoque` : ""}</div>
+                      <div style={{ fontSize: 9, color: "#5a4a4a", marginBottom: 12 }}>{wine.stock > 0 ? `${wine.stock} em estoque` : ""}</div>
                       <button className="btn-red" onClick={(e) => { e.stopPropagation(); addToCart(wine); }} disabled={wine.stock === 0}
                         style={{ width: "100%", padding: "10px", borderRadius: 4, fontSize: 11, letterSpacing: 1, background: wine.stock === 0 ? "#2a1f1f" : "#8b2c2c", color: wine.stock === 0 ? "#5a4a4a" : "#fff", cursor: wine.stock === 0 ? "not-allowed" : "pointer" }}>
                         {wine.stock === 0 ? "Esgotado" : "🛒 Adicionar ao Carrinho"}
@@ -3799,9 +3598,9 @@ export default function App() {
               {/* Info */}
               <div style={{ flex: 1 }}>
                 <p style={{ fontSize: 10, letterSpacing: 3, color: "#8b6060", textTransform: "uppercase", marginBottom: 6 }}>{selectedWine.origin} · {selectedWine.region}</p>
-                <h1 style={{ fontSize: 22, color: "#f5f0e8", marginBottom: 8, lineHeight: 1.3 }}>{selectedWine.name}</h1>
+                <h1 style={{ fontSize: 28, color: "#f5f0e8", marginBottom: 8, lineHeight: 1.2 }}>{selectedWine.name}</h1>
                 <div style={{ marginBottom: 14 }}><Stars rating={selectedWine.rating} /></div>
-                <p style={{ fontSize: 12, color: "#a09080", lineHeight: 1.75, marginBottom: 20 }}>{selectedWine.description}</p>
+                <p style={{ fontSize: 13, color: "#a09080", lineHeight: 1.8, marginBottom: 20 }}>{selectedWine.description}</p>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 22 }}>
                   {[["🗓 Safra", selectedWine.year], ["🍇 Uvas", selectedWine.grapes], ["🌍 Região", selectedWine.region], ["🍾 Teor Alcoólico", selectedWine.alcohol]].map(([label, val]) => (
                     <div key={label} style={{ background: "#1a1410", border: "1px solid #2a1f1f", borderRadius: 8, padding: "10px 13px" }}>
@@ -5235,58 +5034,57 @@ export default function App() {
       {/* 🔍 Image Zoom Modal */}
       {zoomWine && <ImageZoomModal wine={zoomWine} onClose={() => setZoomWine(null)} />}
 
-      {page === "store" && (
-        <footer style={{ background: "#0c0808", borderTop: "2px solid #2a1f1f", padding: "56px 28px 32px", marginTop: 16 }}>
-          <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-
-            {/* Grade principal */}
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px,1fr))", gap: 44, marginBottom: 44 }}>
+      {page === "store" && !selectedWine && (
+        <footer style={{ background: "#0a0808", borderTop: "1px solid #1a1410", padding: "40px 20px 24px" }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+            {/* Linha de divisão e grade */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px,1fr))", gap: 32, marginBottom: 36 }}>
 
               {/* Marca */}
               <div>
-                <div style={{ fontSize: 24, fontWeight: "bold", letterSpacing: 2, color: "#e8b4b4", marginBottom: 12 }}>🍷 VINHOS9</div>
-                <p style={{ fontSize: 15, color: "#b0a090", lineHeight: 1.9, marginBottom: 14 }}>Vinhos importados selecionados das melhores regiões vinícolas do mundo.</p>
+                <div style={{ fontSize: 18, fontWeight: "bold", letterSpacing: 2, color: "#e8b4b4", marginBottom: 8 }}>🍷 VINHOS9</div>
+                <p style={{ fontSize: 12, color: "#4a3a3a", lineHeight: 1.8 }}>Vinhos importados selecionados das melhores regiões vinícolas do mundo.</p>
               </div>
 
-              {/* Pagamento */}
+              {/* 17: Formas de pagamento */}
               <div>
-                <div style={{ fontSize: 14, letterSpacing: 2, color: "#d09080", textTransform: "uppercase", marginBottom: 18, fontWeight: "bold" }}>💳 Formas de Pagamento</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ fontSize: 10, letterSpacing: 2, color: "#7a5a5a", textTransform: "uppercase", marginBottom: 12 }}>💳 Pagamento</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                   {[
-                    { icon: "⚡", label: "Pix", desc: payDescontos.pix > 0 ? `${payDescontos.pix}% de desconto` : "Aprovação imediata", color: payDescontos.pix > 0 ? "#4ade80" : "#9a8a8a" },
-                    { icon: "📄", label: "Boleto", desc: payDescontos.boleto > 0 ? `${payDescontos.boleto}% de desconto` : "Vence em 3 dias úteis", color: payDescontos.boleto > 0 ? "#fbbf24" : "#9a8a8a" },
-                    { icon: "💳", label: "Cartão 1x", desc: payDescontos.credito1x > 0 ? `${payDescontos.credito1x}% de desconto` : "Sem acréscimos", color: payDescontos.credito1x > 0 ? "#e8b4b4" : "#9a8a8a" },
-                    { icon: "💳", label: "Até 12x", desc: "Sujeito a juros do cartão", color: "#9a8a8a" },
+                    { icon: "⚡", label: "Pix", desc: payDescontos.pix > 0 ? `${payDescontos.pix}% de desconto` : "Aprovação imediata", color: payDescontos.pix > 0 ? "#4ade80" : "#5a4a4a" },
+                    { icon: "📄", label: "Boleto", desc: payDescontos.boleto > 0 ? `${payDescontos.boleto}% de desconto` : "Vence em 3 dias", color: payDescontos.boleto > 0 ? "#fbbf24" : "#5a4a4a" },
+                    { icon: "💳", label: "Cartão 1x", desc: payDescontos.credito1x > 0 ? `${payDescontos.credito1x}% de desconto` : "Sem acréscimos", color: payDescontos.credito1x > 0 ? "#e8b4b4" : "#5a4a4a" },
+                    { icon: "💳", label: "Até 12x", desc: "Sujeito a juros do cartão", color: "#5a4a4a" },
                   ].map(({ icon, label, desc, color }) => (
-                    <div key={label} style={{ display: "flex", alignItems: "center", gap: 11 }}>
-                      <span style={{ fontSize: 18, flexShrink: 0 }}>{icon}</span>
+                    <div key={label} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 13 }}>{icon}</span>
                       <div>
-                        <span style={{ fontSize: 15, color: "#d8c8c0", fontWeight: "bold" }}>{label}</span>
-                        <span style={{ fontSize: 13, color, marginLeft: 9 }}>{desc}</span>
+                        <span style={{ fontSize: 12, color: "#a09080" }}>{label}</span>
+                        <span style={{ fontSize: 10, color, marginLeft: 6 }}>{desc}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-                <div style={{ marginTop: 14, fontSize: 13, color: "#9a8a7a", lineHeight: 1.6 }}>
-                  🔒 Processado pelo <strong style={{ color: "#c0a898" }}>Mercado Pago</strong>
+                <div style={{ marginTop: 10, fontSize: 10, color: "#4a3a3a", lineHeight: 1.6 }}>
+                  🔒 Pagamentos processados pelo <strong style={{ color: "#6a5a5a" }}>Mercado Pago</strong>
                 </div>
               </div>
 
               {/* Segurança */}
               <div>
-                <div style={{ fontSize: 14, letterSpacing: 2, color: "#d09080", textTransform: "uppercase", marginBottom: 18, fontWeight: "bold" }}>🔐 Segurança</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ fontSize: 10, letterSpacing: 2, color: "#7a5a5a", textTransform: "uppercase", marginBottom: 12 }}>🔐 Segurança</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
                   {[
                     ["🛡️", "SSL 256-bit", "Conexão criptografada"],
                     ["📋", "LGPD", "Dados protegidos por lei"],
-                    ["✅", "Compra Segura", "Site verificado"],
-                    ["🏅", "Originais", "Garantia de autenticidade"],
+                    ["✅", "Site Verificado", "Compra 100% segura"],
+                    ["🏅", "Vinhos originais", "Garantia de autenticidade"],
                   ].map(([ic, lb, desc]) => (
-                    <div key={lb} style={{ display: "flex", alignItems: "center", gap: 11 }}>
-                      <span style={{ fontSize: 18, flexShrink: 0 }}>{ic}</span>
+                    <div key={lb} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 13 }}>{ic}</span>
                       <div>
-                        <span style={{ fontSize: 15, color: "#d8c8c0", fontWeight: "bold" }}>{lb}</span>
-                        <span style={{ fontSize: 13, color: "#a09090", marginLeft: 9 }}>{desc}</span>
+                        <span style={{ fontSize: 12, color: "#a09080" }}>{lb}</span>
+                        <span style={{ fontSize: 10, color: "#4a3a3a", marginLeft: 6 }}>{desc}</span>
                       </div>
                     </div>
                   ))}
@@ -5294,20 +5092,19 @@ export default function App() {
               </div>
             </div>
 
-            {/* Aviso imagens IA */}
-            <div style={{ borderTop: "1px solid #2a1f1f", paddingTop: 22, marginBottom: 20 }}>
-              <div style={{ background: "rgba(96,165,250,.07)", border: "1px solid rgba(96,165,250,.2)", borderRadius: 10, padding: "16px 20px", fontSize: 14, color: "#8a9aaa", lineHeight: 1.85 }}>
-                📸 <strong style={{ color: "#a8b8c8" }}>Nota sobre as imagens:</strong> As fotos dos vinhos exibidas neste site são reais, porém podem apresentar pequenas diferenças visuais em relação à embalagem física, pois são aprimoradas com <strong style={{ color: "#a8b8c8" }}>inteligência artificial</strong> para melhor apresentação. O produto entregue é 100% original e certificado.
+            {/* 18: Aviso de imagens IA */}
+            <div style={{ borderTop: "1px solid #1a1410", paddingTop: 16, marginBottom: 14 }}>
+              <div style={{ background: "rgba(96,165,250,.05)", border: "1px solid rgba(96,165,250,.15)", borderRadius: 8, padding: "10px 14px", fontSize: 11, color: "#4a5a6a", lineHeight: 1.7 }}>
+                📸 <strong style={{ color: "#5a6a7a" }}>Nota sobre as imagens:</strong> As fotos dos vinhos exibidas neste site são reais, porém podem apresentar pequenas diferenças visuais em relação à embalagem física, pois são aprimoradas com <strong style={{ color: "#5a6a7a" }}>inteligência artificial</strong> para melhor apresentação. O produto entregue é 100% original e certificado.
               </div>
             </div>
 
             {/* Rodapé final */}
             <div style={{ textAlign: "center", paddingTop: 12 }}>
-              <div style={{ fontSize: 22, marginBottom: 7 }}>🍷</div>
-              <div style={{ fontSize: 16, letterSpacing: 3, color: "#a08080", marginBottom: 9, fontWeight: "bold" }}>VINHOS9</div>
-              <p style={{ color: "#7a6a6a", fontSize: 13, lineHeight: 1.8 }}>
-                © 2026 Vinhos9 Importados · Todos os direitos reservados<br />
-                Venda proibida para menores de 18 anos 🔞
+              <div style={{ fontSize: 18, marginBottom: 4 }}>🍷</div>
+              <div style={{ fontSize: 12, letterSpacing: 3, color: "#6a4a4a", marginBottom: 6 }}>VINHOS9</div>
+              <p style={{ color: "#2a1a1a", fontSize: 10 }}>
+                © 2026 Vinhos9 Importados · Todos os direitos reservados · Venda proibida para menores de 18 anos
               </p>
             </div>
           </div>
