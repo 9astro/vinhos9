@@ -3473,6 +3473,7 @@ self.addEventListener("fetch", e => {
         @media(max-width:768px){
           /* ── MOBILE: fontes maiores e textos mais claros ── */
           body,html{font-size:16px}
+          .logo-img{height:28px!important}
 
           /* Clarear todas as cores de texto escuras no mobile */
           [style*="color: #5a4a4a"],[style*="color:#5a4a4a"]{color:#9a8a8a!important}
@@ -3570,7 +3571,7 @@ self.addEventListener("fetch", e => {
       <header style={{ background: "rgba(12,10,9,.97)", borderBottom: "1px solid #2a1f1f", height: 62, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", position: "sticky", top: 0, zIndex: 100, backdropFilter: "blur(10px)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}
           onClick={() => { setPage("store"); setSelectedWine(null); }}>
-          <img src={LOGO_URI} alt="Vinhos9" style={{ height: 42, width: "auto", objectFit: "contain", display: "block" }} />
+          <img src={LOGO_URI} alt="Vinhos9" className="logo-img" style={{ height: 42, width: "auto", objectFit: "contain", display: "block" }} />
           <div>
             <div style={{ fontSize: 16, fontWeight: "bold", letterSpacing: 2, color: "#e8b4b4", lineHeight: 1.2 }}>VINHOS9</div>
             <div style={{ fontSize: 8, letterSpacing: 3, color: "#8b6060", textTransform: "uppercase" }}>Importados Selecionados</div>
@@ -3736,7 +3737,7 @@ self.addEventListener("fetch", e => {
             </div>
           )}
 
-          {/* Catálogo */}}
+          {/* Catálogo */}
           <div id="catalog" className="cat-pad" style={{ padding: "32px 36px 0", maxWidth: 1200, margin: "0 auto" }}>
             <div style={{ marginBottom: 20 }}>
               <div style={{ fontSize: 9, letterSpacing: 4, color: "#8b6060", textTransform: "uppercase", marginBottom: 4 }}>Nosso Catálogo</div>
