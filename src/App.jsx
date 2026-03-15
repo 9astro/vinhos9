@@ -2057,26 +2057,24 @@ const CSVPanel = ({ importCSV, showToast }) => {
     try {
       const base64 = aiImg.split(",")[1];
       const mime = aiImg.split(";")[0].split(":")[1];
-      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      const resp = await fetch("https://ai-gateway.vercel.sh/v1/chat/completions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": apiKey.trim(),
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
+          "Authorization": "Bearer vck_7r0vHp60gZ31x1Bv7bjrNbAxo066eXsSps4w6yKjgk5N3KgRaD2FNReB",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model: "anthropic/claude-sonnet-4-20250514",
           max_tokens: 1000,
           messages: [{ role: "user", content: [
-            { type: "image", source: { type: "base64", media_type: mime, data: base64 } },
+            { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
             { type: "text", text: `Analise esta imagem de vinho e retorne APENAS uma linha CSV (sem cabeçalho) com os campos nesta ordem, separados por vírgula:\nname (título SEO otimizado ex: "Vinho Tinto Chileno Reserva Cabernet Sauvignon 2021"),origin,region,year,costPrice (vazio),price (estimativa em reais),promoPrice (vazio),stock (10),category (Tinto/Branco/Espumante/Rosé),alcohol,grapes,description (descrição SEO),keywords (palavras separadas por ;),harmonization (sugestões separadas por ,),rating (4.5),sales (0)\nResponda SOMENTE a linha CSV sem explicações nem markdown.` }
           ]}]
         })
       });
       const data = await resp.json();
       if (data.error) { showToast(`Erro da IA: ${data.error.message}`, "error"); setAiLoading(false); return; }
-      const csv = data.content?.find(b => b.type === "text")?.text?.trim() || "";
+      const csv = data.choices?.[0]?.message?.content?.trim() || "";
       setAiCSV(csv);
       showToast("CSV gerado pela IA! ✅");
     } catch (e) { showToast("Erro ao chamar a IA. Verifique sua chave API.", "error"); }
@@ -2891,9 +2889,47 @@ export default function App() {
         {inp("grapes",  "Uvas",             "text",   true)}
         {/* Descrição */}
         <div style={{ gridColumn: "1/-1" }}>
-          <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>Descrição</label>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 5 }}>
+            <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase" }}>Descrição</label>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!obj.name) { showToast("Preencha o nome do vinho primeiro.", "error"); return; }
+                setObj(p => ({ ...p, _aiLoading: true }));
+                try {
+                  const prompt = `Escreva uma descrição comercial atraente para um vinho com as seguintes características:
+Nome: ${obj.name}
+Categoria: ${obj.category || ""}
+Origem: ${obj.origin || ""}
+Região: ${obj.region || ""}
+Uvas: ${obj.grapes || ""}
+Safra: ${obj.year || ""}
+Teor alcoólico: ${obj.alcohol || ""}
+
+Escreva em português brasileiro, tom elegante e convidativo, máximo 2 frases curtas (até 120 caracteres). Foque no sabor, aroma e ocasião ideal. Apenas a descrição, sem título.`;
+                  const res = await fetch("https://ai-gateway.vercel.sh/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": "Bearer vck_7r0vHp60gZ31x1Bv7bjrNbAxo066eXsSps4w6yKjgk5N3KgRaD2FNReB" },
+                    body: JSON.stringify({
+                      model: "anthropic/claude-sonnet-4-20250514",
+                      max_tokens: 150,
+                      messages: [{ role: "user", content: prompt }]
+                    })
+                  });
+                  const data = await res.json();
+                  const text = data.choices?.[0]?.message?.content?.trim() || "";
+                  if (text) setObj(p => ({ ...p, description: text, _aiLoading: false }));
+                  else { showToast("Não foi possível gerar a descrição.", "error"); setObj(p => ({ ...p, _aiLoading: false })); }
+                } catch { showToast("Erro ao conectar com a IA.", "error"); setObj(p => ({ ...p, _aiLoading: false })); }
+              }}
+              disabled={obj._aiLoading}
+              style={{ padding: "4px 10px", background: obj._aiLoading ? "#1a1410" : "rgba(139,44,44,.15)", border: "1px solid #8b2c2c", borderRadius: 4, color: obj._aiLoading ? "#5a4a4a" : "#e8b4b4", cursor: obj._aiLoading ? "not-allowed" : "pointer", fontSize: 10, fontFamily: "Georgia,serif", letterSpacing: 1, display: "flex", alignItems: "center", gap: 5, transition: "all .2s" }}>
+              {obj._aiLoading ? "⏳ Gerando..." : "✨ Gerar com IA"}
+            </button>
+          </div>
           <textarea value={obj.description ?? ""} onChange={(e) => setObj((p) => ({ ...p, description: e.target.value }))} rows={3}
-            style={{ width: "100%", background: "#120e0c", border: "1px solid #2a1f1f", borderRadius: 4, padding: "9px 11px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif", resize: "vertical" }} />
+            placeholder="Clique em ✨ Gerar com IA para criar automaticamente..."
+            style={{ width: "100%", background: "#120e0c", border: `1px solid ${obj._aiLoading ? "#8b2c2c" : "#2a1f1f"}`, borderRadius: 4, padding: "9px 11px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif", resize: "vertical", transition: "border .3s" }} />
         </div>
         {/* Harmonização personalizada */}
         <div style={{ gridColumn: "1/-1" }}>
@@ -3210,6 +3246,26 @@ self.addEventListener("fetch", e => {
     const { outcome } = await pwaPrompt.userChoice;
     if (outcome === "accepted") { setPwaInstalled(true); setPwaPrompt(null); }
   };
+
+  // ── Vercel Analytics + Speed Insights via script injection ────────────────
+  useEffect(() => {
+    // Analytics
+    if (!document.getElementById("va-script")) {
+      const s = document.createElement("script");
+      s.id = "va-script";
+      s.defer = true;
+      s.src = "https://va.vercel-scripts.com/v1/script.js";
+      document.head.appendChild(s);
+    }
+    // Speed Insights
+    if (!document.getElementById("vsi-script")) {
+      const s = document.createElement("script");
+      s.id = "vsi-script";
+      s.defer = true;
+      s.src = "https://va.vercel-scripts.com/v1/speed-insights/script.js";
+      document.head.appendChild(s);
+    }
+  }, []);
   // ─────────────────────────────────────────────────────────────────────────
 
   // ── SEO completo: 10, 7, 4, 5, 3, 9, 2, 1, 8, 6 ──────────────────────────
@@ -4011,6 +4067,138 @@ self.addEventListener("fetch", e => {
 
                 {/* Calculadora de Frete */}
                 <FreteCalculator wine={selectedWine} />
+
+                {/* 🍷 Sommelier Virtual IA */}
+                {(() => {
+                  const [somMsg, setSomMsg] = React.useState("");
+                  const [somResp, setSomResp] = React.useState("");
+                  const [somLoad, setSomLoad] = React.useState(false);
+                  const [somOpen, setSomOpen] = React.useState(false);
+                  const [somHistory, setSomHistory] = React.useState([]);
+
+                  const askSommelier = async () => {
+                    if (!somMsg.trim() || somLoad) return;
+                    const userMsg = somMsg.trim();
+                    setSomMsg("");
+                    setSomLoad(true);
+                    const newHistory = [...somHistory, { role: "user", content: userMsg }];
+                    setSomHistory(newHistory);
+
+                    try {
+                      const system = `Você é um sommelier especialista da loja Vinhos9. Responda sempre em português brasileiro, de forma simpática, elegante e objetiva (máximo 3 frases). 
+Vinho atual em análise:
+- Nome: ${selectedWine.name}
+- Tipo: ${selectedWine.category}
+- Origem: ${selectedWine.origin} ${selectedWine.region ? `— ${selectedWine.region}` : ""}
+- Uvas: ${selectedWine.grapes || "não informado"}
+- Safra: ${selectedWine.year || "não informada"}
+- Teor alcoólico: ${selectedWine.alcohol || "não informado"}
+- Descrição: ${selectedWine.description || ""}
+- Preço: R$ ${selectedWine.promoPrice || selectedWine.price}
+Responda dúvidas sobre harmonização, temperatura de serviço, decantação, ocasiões ideais e características do vinho.`;
+
+                      const res = await fetch("https://ai-gateway.vercel.sh/v1/chat/completions", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "Authorization": "Bearer vck_7r0vHp60gZ31x1Bv7bjrNbAxo066eXsSps4w6yKjgk5N3KgRaD2FNReB" },
+                        body: JSON.stringify({
+                          model: "anthropic/claude-sonnet-4-20250514",
+                          max_tokens: 200,
+                          messages: [{ role: "system", content: system }, ...newHistory]
+                        })
+                      });
+                      const data = await res.json();
+                      const reply = data.choices?.[0]?.message?.content?.trim() || "Desculpe, não consegui responder agora.";
+                      setSomHistory([...newHistory, { role: "assistant", content: reply }]);
+                      setSomResp(reply);
+                    } catch {
+                      setSomHistory([...newHistory, { role: "assistant", content: "Erro ao conectar. Tente novamente." }]);
+                    }
+                    setSomLoad(false);
+                  };
+
+                  return (
+                    <div style={{ marginTop: 16, background: "linear-gradient(135deg,#1a0e0e,#120c0c)", border: "1px solid #3a1f1f", borderRadius: 10, overflow: "hidden" }}>
+                      {/* Header clicável */}
+                      <button onClick={() => setSomOpen(p => !p)}
+                        style={{ width: "100%", padding: "12px 16px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", color: "#e8b4b4", fontFamily: "Georgia,serif" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: 20 }}>🍷</span>
+                          <div style={{ textAlign: "left" }}>
+                            <div style={{ fontSize: 13, fontWeight: "bold", letterSpacing: 1 }}>Sommelier Virtual</div>
+                            <div style={{ fontSize: 11, color: "#8b6060" }}>Tire dúvidas sobre este vinho com IA</div>
+                          </div>
+                        </div>
+                        <span style={{ fontSize: 12, color: "#5a4a4a", transform: somOpen ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▼</span>
+                      </button>
+
+                      {/* Chat expandido */}
+                      {somOpen && (
+                        <div style={{ borderTop: "1px solid #2a1f1f", padding: "14px 16px" }}>
+                          {/* Sugestões rápidas */}
+                          {somHistory.length === 0 && (
+                            <div style={{ marginBottom: 12 }}>
+                              <div style={{ fontSize: 11, color: "#5a4a4a", marginBottom: 8 }}>Perguntas frequentes:</div>
+                              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                                {["Com o que harmoniza?", "Qual temperatura servir?", "Precisa decantar?", "Para qual ocasião?"].map(q => (
+                                  <button key={q} onClick={() => { setSomMsg(q); }}
+                                    style={{ padding: "5px 10px", background: "rgba(139,44,44,.1)", border: "1px solid #2a1f1f", borderRadius: 14, color: "#a09080", fontSize: 11, cursor: "pointer", fontFamily: "Georgia,serif" }}>
+                                    {q}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Histórico */}
+                          {somHistory.length > 0 && (
+                            <div style={{ maxHeight: 200, overflowY: "auto", marginBottom: 12, display: "flex", flexDirection: "column", gap: 8 }}>
+                              {somHistory.map((m, i) => (
+                                <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+                                  <div style={{
+                                    maxWidth: "85%", padding: "8px 12px", borderRadius: m.role === "user" ? "10px 10px 2px 10px" : "10px 10px 10px 2px",
+                                    background: m.role === "user" ? "#8b2c2c" : "#1e1614",
+                                    border: m.role === "assistant" ? "1px solid #2a1f1f" : "none",
+                                    fontSize: 13, color: m.role === "user" ? "#fff" : "#d0c0b0", lineHeight: 1.6
+                                  }}>
+                                    {m.role === "assistant" && <span style={{ fontSize: 12, marginRight: 4 }}>🍷</span>}
+                                    {m.content}
+                                  </div>
+                                </div>
+                              ))}
+                              {somLoad && (
+                                <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                                  <div style={{ padding: "8px 14px", background: "#1e1614", border: "1px solid #2a1f1f", borderRadius: "10px 10px 10px 2px", fontSize: 13, color: "#6a5a5a" }}>
+                                    🍷 Analisando...
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Input */}
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <input
+                              value={somMsg}
+                              onChange={e => setSomMsg(e.target.value)}
+                              onKeyDown={e => e.key === "Enter" && askSommelier()}
+                              placeholder="Pergunte ao sommelier..."
+                              style={{ flex: 1, background: "#120e0c", border: "1px solid #2a1f1f", borderRadius: 6, padding: "9px 12px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif", outline: "none" }}
+                            />
+                            <button onClick={askSommelier} disabled={somLoad || !somMsg.trim()}
+                              style={{ padding: "9px 14px", background: somLoad || !somMsg.trim() ? "#1a1410" : "#8b2c2c", border: "none", borderRadius: 6, color: somLoad || !somMsg.trim() ? "#4a3a3a" : "#fff", cursor: somLoad || !somMsg.trim() ? "not-allowed" : "pointer", fontSize: 16, transition: "all .2s" }}>
+                              ➤
+                            </button>
+                          </div>
+                          {somHistory.length > 0 && (
+                            <button onClick={() => { setSomHistory([]); setSomResp(""); }} style={{ marginTop: 8, background: "none", border: "none", color: "#4a3a3a", cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif" }}>
+                              ↺ Nova conversa
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* 13-16: Botões de informação do produto */}
                 <div style={{ marginTop: 16 }}>
