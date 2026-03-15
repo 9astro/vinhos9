@@ -3905,19 +3905,77 @@ self.addEventListener("fetch", e => {
         *{box-sizing:border-box;margin:0;padding:0}
         html,body{overflow-x:hidden;max-width:100vw}
 
-        /* ── DESKTOP: base font maior ── */
-        body,html{font-size:18px}
-        p,span,div,li,td,th,label,input,select,textarea,button{font-size:inherit}
-        @media(min-width:769px){
-          body,html{font-size:20px}
+        /* ── BASE (mobile-first) ── */
+        body,html{font-size:15px}
+        main,aside,.adm-layout{font-size:15px}
+
+        /* ── TABLET: 768px – 1023px ── */
+        @media(min-width:769px) and (max-width:1023px){
+          body,html{font-size:15px}
+          main,aside,.adm-layout{font-size:15px}
+          .wine-card .wc-name{font-size:15px!important}
+          .wine-card .wc-price{font-size:19px!important}
+          .wine-card .wc-desc{font-size:13px!important}
+          .btn-red,.btn-ghost{font-size:13px!important}
+          .nav-link{font-size:13px!important}
+          input,select,textarea{font-size:14px!important}
+          .hero-title{font-size:38px!important}
+          h2{font-size:18px!important}
+          .adm-content h1,.adm-content h2{font-size:18px!important}
+          .adm-content p,.adm-content label{font-size:13px!important}
+          .adm-content input,.adm-content select,.adm-content textarea{font-size:13px!important}
+          .adm-content td{font-size:13px!important}
+          .adm-sidebar button{font-size:13px!important}
+        }
+
+        /* ── NOTEBOOK: 1024px – 1439px ── */
+        @media(min-width:1024px) and (max-width:1439px){
+          body,html{font-size:16px}
+          main,aside,.adm-layout{font-size:16px}
           .wine-card .wc-name{font-size:16px!important}
           .wine-card .wc-price{font-size:20px!important}
-          .wine-card .wc-desc{font-size:13px!important}
-          .wine-card .wc-origin{font-size:13px!important}
-          .btn-red{font-size:16px!important}
-          .btn-ghost{font-size:16px!important}
-          .nav-link{font-size:17px!important}
+          .wine-card .wc-desc{font-size:14px!important}
+          .wine-card .wc-old-price{font-size:13px!important}
+          .wine-card .wc-stock{font-size:13px!important}
+          .btn-red,.btn-ghost{font-size:15px!important}
+          .nav-link{font-size:15px!important}
+          input,select,textarea{font-size:15px!important}
+          .hero-title{font-size:46px!important}
+          h2{font-size:20px!important}
+          h3{font-size:18px!important}
+          .adm-content h1,.adm-content h2{font-size:20px!important}
+          .adm-content p{font-size:14px!important}
+          .adm-content label{font-size:13px!important}
+          .adm-content input,.adm-content select,.adm-content textarea{font-size:14px!important}
+          .adm-content td{font-size:14px!important}
+          .adm-sidebar button{font-size:14px!important}
+          .detail-flex h1{font-size:24px!important}
+          .detail-flex p{font-size:14px!important}
+        }
+
+        /* ── DESKTOP LARGO: 1440px+ ── */
+        @media(min-width:1440px){
+          body,html{font-size:17px}
+          main,aside,.adm-layout{font-size:17px}
+          .wine-card .wc-name{font-size:17px!important}
+          .wine-card .wc-price{font-size:22px!important}
+          .wine-card .wc-desc{font-size:14px!important}
+          .wine-card .wc-old-price{font-size:13px!important}
+          .wine-card .wc-stock{font-size:13px!important}
+          .btn-red,.btn-ghost{font-size:16px!important}
+          .nav-link{font-size:16px!important}
           input,select,textarea{font-size:16px!important}
+          .hero-title{font-size:54px!important}
+          h2{font-size:22px!important}
+          h3{font-size:20px!important}
+          .adm-content h1,.adm-content h2{font-size:22px!important}
+          .adm-content p{font-size:15px!important}
+          .adm-content label{font-size:14px!important}
+          .adm-content input,.adm-content select,.adm-content textarea{font-size:15px!important}
+          .adm-content td{font-size:14px!important}
+          .adm-sidebar button{font-size:14px!important}
+          .detail-flex h1{font-size:28px!important}
+          .detail-flex p{font-size:16px!important}
         }
 
         ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#1a1410}::-webkit-scrollbar-thumb{background:#8b2c2c;border-radius:3px}
@@ -3930,19 +3988,19 @@ self.addEventListener("fetch", e => {
         .wine-card{transition:all .3s ease;cursor:pointer}
         .wine-card:hover{transform:translateY(-6px);box-shadow:0 20px 60px rgba(139,44,44,.35)!important}
         .wine-card .wc-name{font-size:15px;color:#f5f0e8;font-weight:bold}
-        .wine-card .wc-origin{font-size:12px;color:#7a6a6a}
-        .wine-card .wc-desc{font-size:12px;color:#7a6a6a;line-height:1.5}
-        .wine-card .wc-price{font-size:18px;font-weight:bold}
-        .wine-card .wc-old-price{font-size:11px;color:#5a4a4a;text-decoration:line-through}
-        .wine-card .wc-stock{font-size:11px;color:#5a4a4a}
-        .btn-red{background:#8b2c2c;border:none;color:#fff;cursor:pointer;font-family:Georgia,serif;transition:background .2s;font-size:15px!important}
+        .wine-card .wc-origin{font-size:13px;color:#7a6a6a}
+        .wine-card .wc-desc{font-size:13px;color:#7a6a6a;line-height:1.55}
+        .wine-card .wc-price{font-size:19px;font-weight:bold}
+        .wine-card .wc-old-price{font-size:12px;color:#5a4a4a;text-decoration:line-through}
+        .wine-card .wc-stock{font-size:12px;color:#5a4a4a}
+        .btn-red{background:#8b2c2c;border:none;color:#fff;cursor:pointer;font-family:Georgia,serif;transition:background .2s;font-size:14px!important}
         .btn-red:hover{background:#a83232!important}
-        .btn-ghost{background:transparent;border:1px solid #2a1f1f;color:#8a7a7a;cursor:pointer;font-family:Georgia,serif;transition:all .2s;font-size:15px!important}
+        .btn-ghost{background:transparent;border:1px solid #2a1f1f;color:#8a7a7a;cursor:pointer;font-family:Georgia,serif;transition:all .2s;font-size:14px!important}
         .btn-ghost:hover{border-color:#6a5a5a!important;color:#b0a090!important}
-        .nav-link{cursor:pointer;font-size:16px!important;letter-spacing:2px;text-transform:uppercase;transition:color .2s}
+        .nav-link{cursor:pointer;font-size:15px!important;letter-spacing:2px;text-transform:uppercase;transition:color .2s}
         .nav-link:hover{color:#e8b4b4!important}
         .adm-tab:hover{background:rgba(139,44,44,.3)!important}
-        input,select,textarea{outline:none;font-size:15px!important}
+        input,select,textarea{outline:none;font-size:14px!important}
         input:focus,select:focus,textarea:focus{border-color:#8b2c2c!important}
         .scroll-row{display:flex;gap:14px;overflow-x:auto;padding-bottom:8px}
         .scroll-row::-webkit-scrollbar{height:4px}
@@ -3951,29 +4009,21 @@ self.addEventListener("fetch", e => {
 
         /* ── ADM: textos mais claros ── */
         .adm-content{color:#d0c0c0!important}
-        .adm-content h1,.adm-content h2,.adm-content h3{color:#f0dede!important;font-size:1.2em}
-        .adm-content p{color:#b8a8a8!important;font-size:14px}
-        .adm-content label{color:#c8b0b0!important;font-size:13px!important}
-        .adm-content input,.adm-content select,.adm-content textarea{color:#f0dede!important;font-size:14px!important}
-        .adm-content td{color:#c8b8b8!important;font-size:13px!important}
+        .adm-content h1,.adm-content h2,.adm-content h3{color:#f0dede!important}
+        .adm-content p{color:#b8a8a8!important}
+        .adm-content label{color:#c8b0b0!important}
+        .adm-content input,.adm-content select,.adm-content textarea{color:#f0dede!important}
+        .adm-content td{color:#c8b8b8!important}
         .adm-content th{color:#b09090!important;font-size:11px!important;letter-spacing:1.5px}
         .adm-content span:not([style]){color:#c0b0b0}
-        .adm-sidebar button{font-size:13px!important;color:#c0a8a8!important}
+        .adm-sidebar button{color:#c0a8a8!important}
         .adm-sidebar button[style*="color:#e8b4b4"]{color:#e8b4b4!important}
 
         /* ── MOBILE: cores claras via variável customizada ── */
         @media(max-width:768px){
-          :root{
-            --txt-dim: #b0a0a0;
-            --txt-muted: #a09090;
-            --txt-faint: #888080;
-          }
-        }
-
-        @media(max-width:768px){
-          /* ── MOBILE: fontes maiores e textos mais claros ── */
-          body,html{font-size:16px}
-          .logo-img{height:28px!important}
+          :root{--txt-dim:#b0a0a0;--txt-muted:#a09090;--txt-faint:#888080}
+          body,html{font-size:15px}
+          main,aside,.adm-layout{font-size:14px}
 
           /* Clarear todas as cores de texto escuras no mobile */
           [style*="color: #5a4a4a"],[style*="color:#5a4a4a"]{color:#9a8a8a!important}
