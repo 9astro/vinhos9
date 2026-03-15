@@ -557,13 +557,13 @@ Vinho atual em análise:
 - Descrição: ${wine.description || ""}
 - Preço: R$ ${wine.promoPrice || wine.price}
 Responda dúvidas sobre harmonização, temperatura de serviço, decantação, ocasiões ideais e características do vinho.`;
-      const res = await fetch("https://ai-gateway.vercel.sh/v1/chat/completions", {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": "Bearer vck_7r0vHp60gZ31x1Bv7bjrNbAxo066eXsSps4w6yKjgk5N3KgRaD2FNReB" },
-        body: JSON.stringify({ model: "anthropic/claude-sonnet-4-20250514", max_tokens: 200, messages: [{ role: "system", content: system }, ...newHistory] })
+        headers: { "Content-Type": "application/json", "x-api-key": "vck_7r0vHp60gZ31x1Bv7bjrNbAxo066eXsSps4w6yKjgk5N3KgRaD2FNReB", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+        body: JSON.stringify({ model: "claude-haiku-4-5", max_tokens: 300, system, messages: newHistory })
       });
       const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content?.trim() || "Desculpe, não consegui responder agora.";
+      const reply = data.content?.[0]?.text?.trim() || "Desculpe, não consegui responder agora.";
       setSomHistory([...newHistory, { role: "assistant", content: reply }]);
     } catch {
       setSomHistory([...newHistory, { role: "assistant", content: "Erro ao conectar. Tente novamente." }]);
@@ -2497,24 +2497,26 @@ const CSVPanel = ({ importCSV, showToast }) => {
     try {
       const base64 = aiImg.split(",")[1];
       const mime = aiImg.split(";")[0].split(":")[1];
-      const resp = await fetch("https://ai-gateway.vercel.sh/v1/chat/completions", {
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": "Bearer vck_7r0vHp60gZ31x1Bv7bjrNbAxo066eXsSps4w6yKjgk5N3KgRaD2FNReB",
+          "x-api-key": apiKey.trim(),
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
         },
         body: JSON.stringify({
-          model: "anthropic/claude-sonnet-4-20250514",
+          model: "claude-haiku-4-5",
           max_tokens: 1000,
           messages: [{ role: "user", content: [
-            { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
+            { type: "image", source: { type: "base64", media_type: mime, data: base64 } },
             { type: "text", text: `Analise esta imagem de vinho e retorne APENAS uma linha CSV (sem cabeçalho) com os campos nesta ordem, separados por vírgula:\nname (título SEO otimizado ex: "Vinho Tinto Chileno Reserva Cabernet Sauvignon 2021"),origin,region,year,costPrice (vazio),price (estimativa em reais),promoPrice (vazio),stock (10),category (Tinto/Branco/Espumante/Rosé),alcohol,grapes,description (descrição SEO),keywords (palavras separadas por ;),harmonization (sugestões separadas por ,),rating (4.5),sales (0)\nResponda SOMENTE a linha CSV sem explicações nem markdown.` }
           ]}]
         })
       });
       const data = await resp.json();
       if (data.error) { showToast(`Erro da IA: ${data.error.message}`, "error"); setAiLoading(false); return; }
-      const csv = data.choices?.[0]?.message?.content?.trim() || "";
+      const csv = data.content?.[0]?.text?.trim() || "";
       setAiCSV(csv);
       showToast("CSV gerado pela IA! ✅");
     } catch (e) { showToast("Erro ao chamar a IA. Verifique sua chave API.", "error"); }
@@ -3347,17 +3349,17 @@ Safra: ${obj.year || ""}
 Teor alcoólico: ${obj.alcohol || ""}
 
 Escreva em português brasileiro, tom elegante e convidativo, máximo 2 frases curtas (até 120 caracteres). Foque no sabor, aroma e ocasião ideal. Apenas a descrição, sem título.`;
-                  const res = await fetch("https://ai-gateway.vercel.sh/v1/chat/completions", {
+                  const res = await fetch("https://api.anthropic.com/v1/messages", {
                     method: "POST",
-                    headers: { "Content-Type": "application/json", "Authorization": "Bearer vck_7r0vHp60gZ31x1Bv7bjrNbAxo066eXsSps4w6yKjgk5N3KgRaD2FNReB" },
+                    headers: { "Content-Type": "application/json", "x-api-key": "vck_7r0vHp60gZ31x1Bv7bjrNbAxo066eXsSps4w6yKjgk5N3KgRaD2FNReB", "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
                     body: JSON.stringify({
-                      model: "anthropic/claude-sonnet-4-20250514",
+                      model: "claude-haiku-4-5",
                       max_tokens: 150,
                       messages: [{ role: "user", content: prompt }]
                     })
                   });
                   const data = await res.json();
-                  const text = data.choices?.[0]?.message?.content?.trim() || "";
+                  const text = data.content?.[0]?.text?.trim() || "";
                   if (text) setObj(p => ({ ...p, description: text, _aiLoading: false }));
                   else { showToast("Não foi possível gerar a descrição.", "error"); setObj(p => ({ ...p, _aiLoading: false })); }
                 } catch { showToast("Erro ao conectar com a IA.", "error"); setObj(p => ({ ...p, _aiLoading: false })); }
