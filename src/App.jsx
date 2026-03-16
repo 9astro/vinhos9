@@ -566,24 +566,14 @@ Vinho atual em análise:
 - Descrição: ${wine.description || ""}
 - Preço: R$ ${wine.promoPrice || wine.price}
 Responda dúvidas sobre harmonização, temperatura de serviço, decantação, ocasiões ideais e características do vinho.`;
-      const apiKey = (() => { try { return localStorage.getItem("v9_gemini_key") || "AIzaSyA0AopXkvI0DvLEF0jastSRqY2kv9Cz740"; } catch { return "AIzaSyA0AopXkvI0DvLEF0jastSRqY2kv9Cz740"; } })();
-      if (!apiKey) {
-        setSomHistory([...newHistory, { role: "assistant", content: "⚠️ Chave Gemini não configurada. Acesse o ADM → Importar CSV e salve sua chave Google Gemini." }]);
-        setSomLoad(false); return;
-      }
-      // Monta histórico no formato Gemini
-      const geminiContents = newHistory.map(m => ({
-        role: m.role === "assistant" ? "model" : "user",
-        parts: [{ text: m.content }]
-      }));
-      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyA0AopXkvI0DvLEF0jastSRqY2kv9Cz740`, {
+      const messages = [
+        { role: "system", content: system },
+        ...newHistory.map(m => ({ role: m.role, content: m.content }))
+      ];
+      const res = await fetch(`https://withered-rice-255b.suavidadewil.workers.dev`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: system }] },
-          contents: geminiContents,
-          generationConfig: { maxOutputTokens: 300 }
-        })
+        body: JSON.stringify({ messages, max_tokens: 300, system })
       });
       const rawText = await res.text();
       let data;
@@ -592,7 +582,7 @@ Responda dúvidas sobre harmonização, temperatura de serviço, decantação, o
         setSomHistory([...newHistory, { role: "assistant", content: `⚠️ Erro da API: ${data.error.message}` }]);
         setSomLoad(false); return;
       }
-      const reply = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "Desculpe, não consegui responder agora.";
+      const reply = data.choices?.[0]?.message?.content?.trim() || "Desculpe, não consegui responder agora.";
       setSomHistory([...newHistory, { role: "assistant", content: reply }]);
     } catch(e) {
       setSomHistory([...newHistory, { role: "assistant", content: `Erro: ${e.message}` }]);
@@ -2837,22 +2827,25 @@ const CSVPanel = ({ importCSV, showToast }) => {
     try {
       const base64 = aiImg.split(",")[1];
       const mime = aiImg.split(";")[0].split(":")[1];
-      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyA0AopXkvI0DvLEF0jastSRqY2kv9Cz740`, {
+      const OR_KEY2 = apiKey.trim();
+      const csvPrompt = `Analise esta imagem de vinho e retorne APENAS uma linha CSV sem cabeçalho com os campos: name,origin,region,year,costPrice,price,promoPrice,stock,category,alcohol,grapes,description,keywords,harmonization,rating,sales. Responda SOMENTE a linha CSV.`;
+      const resp = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${OR_KEY2}`, "HTTP-Referer": "https://vinhos9.com.br", "X-Title": "Vinhos9" },
         body: JSON.stringify({
-          contents: [{ role: "user", parts: [
-            { inline_data: { mime_type: mime, data: base64 } },
-            { text: `Analise esta imagem de vinho e retorne APENAS uma linha CSV (sem cabeçalho) com os campos nesta ordem, separados por vírgula:\nname (título SEO otimizado ex: "Vinho Tinto Chileno Reserva Cabernet Sauvignon 2021"),origin,region,year,costPrice (vazio),price (estimativa em reais),promoPrice (vazio),stock (10),category (Tinto/Branco/Espumante/Rosé),alcohol,grapes,description (descrição SEO),keywords (palavras separadas por ;),harmonization (sugestões separadas por ,),rating (4.5),sales (0)\nResponda SOMENTE a linha CSV sem explicações nem markdown.` }
+          model: "meta-llama/llama-3.2-11b-vision-instruct:free",
+          messages: [{ role: "user", content: [
+            { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
+            { type: "text", text: csvPrompt }
           ]}],
-          generationConfig: { maxOutputTokens: 1000 }
+          max_tokens: 1000
         })
       });
       const rawText2 = await resp.text();
       let data;
       try { data = JSON.parse(rawText2); } catch { data = { error: { message: `Resposta inválida (${resp.status}): ${rawText2.slice(0,100)}` } }; }
       if (data.error) { showToast(`Erro da IA: ${data.error.message}`, "error"); setAiLoading(false); return; }
-      const csv = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+      const csv = data.choices?.[0]?.message?.content?.trim() || "";
       setAiCSV(csv);
       showToast("CSV gerado pela IA! ✅");
     } catch (e) { showToast(`Erro: ${e.message}`, "error"); }
@@ -3774,21 +3767,16 @@ Safra: ${obj.year || ""}
 Teor alcoólico: ${obj.alcohol || ""}
 
 Escreva em português brasileiro, tom elegante e convidativo, máximo 2 frases curtas (até 120 caracteres). Foque no sabor, aroma e ocasião ideal. Apenas a descrição, sem título.`;
-                  const _admKey = (() => { try { return localStorage.getItem("v9_gemini_key") || "AIzaSyA0AopXkvI0DvLEF0jastSRqY2kv9Cz740"; } catch { return "AIzaSyA0AopXkvI0DvLEF0jastSRqY2kv9Cz740"; } })();
-                  if (!_admKey) { showToast("Salve sua chave Google Gemini no campo acima primeiro.", "error"); setObj(p => ({ ...p, _aiLoading: false })); return; }
-                  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=AIzaSyA0AopXkvI0DvLEF0jastSRqY2kv9Cz740`, {
+                  const res = await fetch(`https://withered-rice-255b.suavidadewil.workers.dev`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      contents: [{ role: "user", parts: [{ text: prompt }] }],
-                      generationConfig: { maxOutputTokens: 150 }
-                    })
+                    body: JSON.stringify({ messages: [{ role: "user", content: prompt }], max_tokens: 150 })
                   });
                   const rawText3 = await res.text();
                   let data3;
                   try { data3 = JSON.parse(rawText3); } catch { data3 = { error: { message: `Resposta inválida: ${rawText3.slice(0,100)}` } }; }
                   if (data3.error) { showToast(`Erro IA: ${data3.error.message}`, "error"); setObj(p => ({ ...p, _aiLoading: false })); return; }
-                  const text = data3.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+                  const text = data3.choices?.[0]?.message?.content?.trim() || "";
                   if (text) setObj(p => ({ ...p, description: text, _aiLoading: false }));
                   else { showToast("Não foi possível gerar a descrição.", "error"); setObj(p => ({ ...p, _aiLoading: false })); }
                 } catch(e) { showToast(`Erro: ${e.message}`, "error"); setObj(p => ({ ...p, _aiLoading: false })); }
