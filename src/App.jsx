@@ -442,7 +442,7 @@ const BannersAdminPanel = ({ banners, saveBanners }) => {
                     <div style={{ position: "relative", marginBottom: 8 }}>
                       <img src={eb[field]} alt={`Imagem do banner: ${lbl}`} style={{ width: "100%", height: 70, objectFit: "cover", borderRadius: 4 }} />
                       <button onClick={() => updateBanner(field, null)}
-                        style={{ position: "absolute", top: 3, right: 3, background: "rgba(0,0,0,.75)", border: "none", color: "#ef4444", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", fontSize: 11 }}>✕</button>
+                        style={{ position: "absolute", top: 3, right: 3, background: "rgba(0,0,0,.75)", border: "none", color: "#ef4444", borderRadius: "50%", width: 28, height: 28, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
                     </div>
                   ) : (
                     <div style={{ height: 60, background: "#1a1410", border: "1px dashed #2a1f1f", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, color: "#3a2a2a", marginBottom: 8 }}>
@@ -466,7 +466,7 @@ const BannersAdminPanel = ({ banners, saveBanners }) => {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
             <div>
               <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 4 }}>Tamanho da imagem</label>
-              <select value={eb.imgSize || "cover"} onChange={e => updateBanner("imgSize", e.target.value)}
+              <select aria-label="Tamanho da imagem do banner" value={eb.imgSize || "cover"} onChange={e => updateBanner("imgSize", e.target.value)}
                 style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "8px 10px", color: "#f5f0e8", fontSize: 12, fontFamily: "Georgia,serif" }}>
                 <option value="cover">Cover (preenche todo)</option>
                 <option value="contain">Contain (mostra tudo)</option>
@@ -475,7 +475,7 @@ const BannersAdminPanel = ({ banners, saveBanners }) => {
             </div>
             <div>
               <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 4 }}>Posição da imagem</label>
-              <select value={eb.imgPosition || "center"} onChange={e => updateBanner("imgPosition", e.target.value)}
+              <select aria-label="Posição da imagem do banner" value={eb.imgPosition || "center"} onChange={e => updateBanner("imgPosition", e.target.value)}
                 style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "8px 10px", color: "#f5f0e8", fontSize: 12, fontFamily: "Georgia,serif" }}>
                 <option value="center">Centro</option>
                 <option value="top">Topo</option>
@@ -535,7 +535,7 @@ const ManualReviewForm = ({ wines, supaCfg, setReviews, showToast }) => {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
         <div>
           <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>Vinho</label>
-          <select value={form.wineId} onChange={e => setForm(p => ({ ...p, wineId: e.target.value }))}
+          <select aria-label="Selecionar vinho para avaliação" value={form.wineId} onChange={e => setForm(p => ({ ...p, wineId: e.target.value }))}
             style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "9px 10px", color: form.wineId ? "#f5f0e8" : "#5a4a4a", fontSize: 12, fontFamily: "Georgia,serif" }}>
             <option value="">Selecione o vinho…</option>
             {wines.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
@@ -641,7 +641,7 @@ Responda dúvidas sobre harmonização, temperatura de serviço, decantação, o
         <div style={{ borderTop: "1px solid #2a1f1f", padding: "14px 16px" }}>
           {somHistory.length === 0 && (
             <div style={{ marginBottom: 12 }}>
-              <div style={{ fontSize: 11, color: "#5a4a4a", marginBottom: 8 }}>Perguntas frequentes:</div>
+              <div style={{ fontSize: 11, color: "#9a8a8a", marginBottom: 8 }}>Perguntas frequentes:</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {[
                   "Com o que harmoniza?",
@@ -687,7 +687,7 @@ Responda dúvidas sobre harmonização, temperatura de serviço, decantação, o
               style={{ padding: "9px 14px", background: somLoad || !somMsg.trim() ? "#1a1410" : "#8b2c2c", border: "none", borderRadius: 6, color: somLoad || !somMsg.trim() ? "#4a3a3a" : "#fff", cursor: somLoad || !somMsg.trim() ? "not-allowed" : "pointer", fontSize: 16, transition: "all .2s" }}>➤</button>
           </div>
           {somHistory.length > 0 && (
-            <button onClick={() => setSomHistory([])} style={{ marginTop: 8, background: "none", border: "none", color: "#4a3a3a", cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif" }} aria-label="Iniciar nova conversa">↺ Nova conversa</button>
+            <button onClick={() => setSomHistory([])} style={{ marginTop: 8, background: "none", border: "none", color: "#9a8a8a", cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif" }} aria-label="Iniciar nova conversa">↺ Nova conversa</button>
           )}
         </div>
       )}
@@ -762,8 +762,8 @@ const MiniCard = ({ wine, onClick }) => {
       </div>
       <div style={{ padding: "10px 12px" }}>
         <div style={{ fontSize: 12, color: "#f5f0e8", fontWeight: "bold", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{wine.name}</div>
-        <div style={{ fontSize: 9, color: "#7a6a6a", marginBottom: 4 }}>{wine.origin}{wine.year ? ` · ${wine.year}` : ""}</div>
-        {shortDesc && <div style={{ fontSize: 10, color: "#6a5a5a", lineHeight: 1.4, marginBottom: 6, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{shortDesc}</div>}
+        <div style={{ fontSize: 9, color: "#9a8a8a", marginBottom: 4 }}>{wine.origin}{wine.year ? ` · ${wine.year}` : ""}</div>
+        {shortDesc && <div style={{ fontSize: 10, color: "#9a8a8a", lineHeight: 1.4, marginBottom: 6, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{shortDesc}</div>}
         <div style={{ display: "flex", alignItems: "baseline", gap: 5, marginBottom: wine.promoPrice ? 5 : 0 }}>
           <span style={{ fontSize: 14, color: wine.promoPrice ? "#fbbf24" : "#e8b4b4", fontWeight: "bold" }}>{fmt(activePrice)}</span>
           {wine.promoPrice && <span style={{ fontSize: 10, color: "#5a4a4a", textDecoration: "line-through" }}>{fmt(wine.price)}</span>}
@@ -798,7 +798,7 @@ const ImageZoomModal = ({ wine, onClose }) => {
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,.92)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", animation: "fadeIn .2s ease", cursor: "zoom-out" }}>
       <div onClick={e => e.stopPropagation()} style={{ position: "relative", maxWidth: 600, maxHeight: "90vh", width: "90vw", cursor: "default" }}>
-        <button onClick={onClose} aria-label="Fechar imagem" style={{ position: "absolute", top: -14, right: -14, zIndex: 10, background: "#8b2c2c", border: "none", borderRadius: "50%", width: 32, height: 32, color: "#fff", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+        <button onClick={onClose} aria-label="Fechar imagem" style={{ position: "absolute", top: -22, right: -22, zIndex: 10, background: "#8b2c2c", border: "none", borderRadius: "50%", width: 44, height: 44, color: "#fff", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
         <div style={{ borderRadius: 12, overflow: "hidden", aspectRatio: "1/1" }}>
           <WineThumb wine={wine} height="100%" />
         </div>
@@ -1628,7 +1628,7 @@ const ClientAccountPanel = (props) => {
               <button onClick={() => { setAuthMode("login"); setAuthError(""); }} aria-label="Voltar ao login" style={{ background: "none", border: "none", color: "#7a6a6a", cursor: "pointer", fontSize: 18 }}>←</button>
               <div>
                 <h2 style={{ fontSize: 19, color: "#e8b4b4" }}>Criar Conta</h2>
-                <p style={{ fontSize: 11, color: "#5a4a4a", marginTop: 2 }}>Cadastre-se e acompanhe seus pedidos</p>
+                <p style={{ fontSize: 11, color: "#9a8a8a", marginTop: 2 }}>Cadastre-se e acompanhe seus pedidos</p>
               </div>
               <button onClick={onClose} aria-label="Fechar" style={{ marginLeft: "auto", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 18 }}>✕</button>
             </div>
@@ -2170,7 +2170,7 @@ const CartFreteSelector = ({ freteConfig, cartTotal, freteEscolhido, setFreteEsc
               {buscando ? "⏳" : cepOk ? "✅" : cepErro ? "❌" : ""}
             </span>
           </div>
-          <a href="https://buscacepinter.correios.com.br" target="_blank" rel="noreferrer"
+          <a href="https://buscacepinter.correios.com.br" target="_blank" rel="noreferrer" aria-label="Buscar CEP nos Correios"
             style={{ padding: "8px 10px", background: "#1a1410", border: "1px solid #2a1f1f", borderRadius: 4, color: "#8b6060", fontSize: 10, textDecoration: "none", display: "flex", alignItems: "center", whiteSpace: "nowrap", fontFamily: "Georgia,serif" }}>
             Não sei
           </a>
@@ -2207,7 +2207,7 @@ const CartFreteSelector = ({ freteConfig, cartTotal, freteEscolhido, setFreteEsc
           })}
         </div>
       ) : (
-        <div style={{ fontSize: 11, color: "#5a4a4a", padding: "10px 0" }}>
+        <div style={{ fontSize: 11, color: "#9a8a8a", padding: "10px 0" }}>
           Configure as opções de frete no ADM → Frete.
         </div>
       )}
@@ -2293,7 +2293,7 @@ const BannerEditor = ({ banner, banners, setBanners, showToast, saveBanners }) =
             {inp("Subtítulo", "subtitle", "Espumantes com até 20% OFF", true)}
             <div>
               <label style={{ display:"block", fontSize:9, letterSpacing:2, color:"#5a4a4a", textTransform:"uppercase", marginBottom:4 }}>Filtro ao clicar</label>
-              <select value={form.targetFilter || ""} onChange={e => upd("targetFilter", e.target.value || null)}
+              <select aria-label="Filtrar por categoria" value={form.targetFilter || ""} onChange={e => upd("targetFilter", e.target.value || null)}
                 style={{ width:"100%", background:"#0c0a09", border:"1px solid #2a1f1f", borderRadius:4, padding:"8px 10px", color:"#f5f0e8", fontSize:13, fontFamily:"Georgia,serif" }}>
                 <option value="">Sem filtro</option>
                 {["Tinto","Branco","Espumante","Rosé"].map(c => <option key={c} value={c}>{c}</option>)}
@@ -2521,17 +2521,17 @@ const CuponsPanel = ({ customCoupons, saveCoupons, showToast }) => {
         <div style={{ fontSize: 12, letterSpacing: 2, color: "#a09080", textTransform: "uppercase", marginBottom: 16 }}>Criar Novo Cupom</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: 12, alignItems: "end" }}>
           <div>
-            <label style={{ display: "block", fontSize: 11, color: "#5a4a4a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Código</label>
+            <label style={{ display: "block", fontSize: 11, color: "#9a8a8a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Código</label>
             <input value={newCode} onChange={e => setNewCode(e.target.value.toUpperCase())} placeholder="Ex: NATAL20"
               style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "10px 12px", color: "#fbbf24", fontSize: 14, fontFamily: "monospace", letterSpacing: 2, boxSizing: "border-box" }} />
           </div>
           <div>
-            <label style={{ display: "block", fontSize: 11, color: "#5a4a4a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Desconto (%)</label>
+            <label style={{ display: "block", fontSize: 11, color: "#9a8a8a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Desconto (%)</label>
             <input type="number" value={newPct} onChange={e => setNewPct(e.target.value)} placeholder="Ex: 15" min="1" max="100"
               style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "10px 12px", color: "#4ade80", fontSize: 14, fontFamily: "Georgia,serif", boxSizing: "border-box" }} />
           </div>
           <div>
-            <label style={{ display: "block", fontSize: 11, color: "#5a4a4a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Limite de usos</label>
+            <label style={{ display: "block", fontSize: 11, color: "#9a8a8a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>Limite de usos</label>
             <input type="number" value={newLimit} onChange={e => setNewLimit(e.target.value)} placeholder="∞ Ilimitado" min="1"
               style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "10px 12px", color: "#60a5fa", fontSize: 14, fontFamily: "Georgia,serif", boxSizing: "border-box" }} />
           </div>
@@ -2553,7 +2553,7 @@ const CuponsPanel = ({ customCoupons, saveCoupons, showToast }) => {
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 15, color: "#4ade80", fontWeight: "bold" }}>{pct}% OFF</div>
-                <div style={{ fontSize: 11, color: "#5a4a4a", marginTop: 2 }}>
+                <div style={{ fontSize: 11, color: "#9a8a8a", marginTop: 2 }}>
                   {limit == null
                     ? <span style={{ color: "#3a5a3a" }}>∞ Ilimitado</span>
                     : <span style={{ color: esgotado ? "#ef4444" : "#60a5fa" }}>{uses}/{limit} usos {esgotado ? "— Esgotado" : `— ${limit - uses} restantes`}</span>
@@ -2670,13 +2670,13 @@ const FretePanel = ({ freteConfig, saveFreteConfig, showToast }) => {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
               {[["nome","Nome (ex: PAC)"],["icon","Ícone (emoji)"],["prazo","Prazo (ex: 5 dias úteis)"],["base","Preço base (R$)"]].map(([f, l]) => (
                 <div key={f}>
-                  <label style={{ display: "block", fontSize: 11, color: "#5a4a4a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 5 }}>{l}</label>
+                  <label style={{ display: "block", fontSize: 11, color: "#9a8a8a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 5 }}>{l}</label>
                   <input value={form[f] ?? ""} onChange={e => setForm(p => ({ ...p, [f]: e.target.value }))}
                     style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "9px 11px", color: "#f5f0e8", fontSize: 14, fontFamily: "Georgia,serif", boxSizing: "border-box" }} />
                 </div>
               ))}
               <div style={{ gridColumn: "1/-1" }}>
-                <label style={{ display: "block", fontSize: 11, color: "#5a4a4a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 5 }}>Valor mínimo para frete grátis (R$) — deixe vazio se não aplicar</label>
+                <label style={{ display: "block", fontSize: 11, color: "#9a8a8a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 5 }}>Valor mínimo para frete grátis (R$) — deixe vazio se não aplicar</label>
                 <input type="number" value={form.minValue ?? ""} onChange={e => setForm(p => ({ ...p, minValue: e.target.value }))}
                   style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "9px 11px", color: "#fbbf24", fontSize: 14, fontFamily: "Georgia,serif", boxSizing: "border-box" }} />
               </div>
@@ -2840,7 +2840,7 @@ const SocialPanel = ({ showToast }) => {
                   <span style={{ fontSize: 9, letterSpacing: 1, background: rede.badgeColor + "22", color: rede.badgeColor, border: `1px solid ${rede.badgeColor}44`, borderRadius: 99, padding: "2px 8px", textTransform: "uppercase" }}>{rede.badge}</span>
                   {isSaved && <span style={{ fontSize: 9, letterSpacing: 1, background: "#4ade8022", color: "#4ade80", border: "1px solid #4ade8044", borderRadius: 99, padding: "2px 8px" }}>✅ CONFIGURADO</span>}
                 </div>
-                <div style={{ fontSize: 11, color: "#5a4a4a", marginTop: 2 }}>{rede.apis.length} APIs disponíveis · clique para expandir</div>
+                <div style={{ fontSize: 11, color: "#9a8a8a", marginTop: 2 }}>{rede.apis.length} APIs disponíveis · clique para expandir</div>
               </div>
               <span style={{ color: "#5a4a4a", fontSize: 18 }}>{isOpen ? "▲" : "▼"}</span>
             </div>
@@ -2864,7 +2864,7 @@ const SocialPanel = ({ showToast }) => {
                           style={{ padding: "5px 12px", background: "none", border: "1px solid #3a2f2f", borderRadius: 4, color: "#9a8a8a", cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif" }}>
                           {showCode[rede.key + i] ? "▲ Código" : "▶ Ver código"}
                         </button>
-                        <a href={api.link} target="_blank" rel="noreferrer"
+                        <a href={api.link} target="_blank" rel="noreferrer" aria-label="Documentação oficial do gateway de pagamento"
                           style={{ padding: "5px 12px", background: "none", border: `1px solid ${rede.color}44`, borderRadius: 4, color: rede.color, cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif", textDecoration: "none" }}>
                           📖 Docs ↗
                         </a>
@@ -2885,7 +2885,7 @@ const SocialPanel = ({ showToast }) => {
                 </div>
                 {rede.fields.map(f => (
                   <div key={f.key} style={{ marginBottom: 14 }}>
-                    <label style={{ display: "block", fontSize: 11, color: "#5a4a4a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 5 }}>{f.label}</label>
+                    <label style={{ display: "block", fontSize: 11, color: "#9a8a8a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 5 }}>{f.label}</label>
                     <input
                       value={(vals[rede.key] || {})[f.key] || ""}
                       onChange={e => setVals(p => ({ ...p, [rede.key]: { ...(p[rede.key] || {}), [f.key]: e.target.value } }))}
@@ -3056,7 +3056,7 @@ const GaleriaPanel = ({ supaCfg, wines, setWines, supaFetch, showToast }) => {
                 {img.wine && <div style={{ fontSize: 11, color: "#e8b4b4", marginBottom: 4 }}>📦 {img.wine.name.slice(0, 22)}{img.wine.name.length > 22 ? "…" : ""}</div>}
                 {img.size > 0 && <div style={{ fontSize: 10, color: "#3a2a2a", marginBottom: 8 }}>{fmtSize(img.size)}</div>}
                 <div style={{ display: "flex", gap: 6 }}>
-                  <a href={img.url} target="_blank" rel="noreferrer" style={{ flex: 1, textAlign: "center", padding: "6px", background: "#1a2a3a", border: "1px solid #2a3a4a", borderRadius: 4, color: "#60a5fa", fontSize: 11, textDecoration: "none", fontFamily: "Georgia,serif" }}>🔗 Ver</a>
+                  <a href={img.url} target="_blank" rel="noreferrer" aria-label={`Ver imagem ${img.name} em nova aba`} style={{ flex: 1, textAlign: "center", padding: "6px", background: "#1a2a3a", border: "1px solid #2a3a4a", borderRadius: 4, color: "#60a5fa", fontSize: 11, textDecoration: "none", fontFamily: "Georgia,serif" }}>🔗 Ver</a>
                   <button onClick={() => handleDelete(img)} disabled={deleting === img.name}
                     style={{ flex: 1, padding: "6px", background: deleting === img.name ? "#1a1410" : "#2a1010", border: "1px solid #3a1f1f", borderRadius: 4, color: deleting === img.name ? "#5a4a4a" : "#ef4444", cursor: deleting === img.name ? "not-allowed" : "pointer", fontSize: 11, fontFamily: "Georgia,serif" }}>
                     {deleting === img.name ? "⏳" : "🗑 Del"}
@@ -3152,7 +3152,7 @@ const EmailPanel = ({ showToast }) => {
 
   const inp = (label, field, placeholder) => (
     <div style={{ marginBottom: 14 }}>
-      <label style={{ display: "block", fontSize: 11, color: "#5a4a4a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 5 }}>{label}</label>
+      <label style={{ display: "block", fontSize: 11, color: "#9a8a8a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 5 }}>{label}</label>
       <input value={cfg[field] || ""} onChange={e => setCfg(p => ({ ...p, [field]: e.target.value }))} placeholder={placeholder}
         style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "10px 12px", color: "#f5f0e8", fontSize: 13, fontFamily: "monospace", boxSizing: "border-box" }} />
     </div>
@@ -3195,7 +3195,7 @@ const EmailPanel = ({ showToast }) => {
         </div>
         {/* E-mail de teste */}
         <div style={{ marginTop: 4, marginBottom: 14 }}>
-          <label style={{ display: "block", fontSize: 11, color: "#5a4a4a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 5 }}>E-mail para teste</label>
+          <label style={{ display: "block", fontSize: 11, color: "#9a8a8a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 5 }}>E-mail para teste</label>
           <input value={testEmail} onChange={e => setTestEmail(e.target.value)} placeholder="seu@email.com"
             style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "10px 12px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif", boxSizing: "border-box" }} />
         </div>
@@ -3212,7 +3212,7 @@ const EmailPanel = ({ showToast }) => {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 12, flexWrap: "wrap", gap: 8 }}>
             <div>
               <div style={{ fontSize: 14, color: "#f5f0e8", marginBottom: 4 }}>{icon} {label}</div>
-              <div style={{ fontSize: 11, color: "#5a4a4a", marginBottom: 6 }}>{desc}</div>
+              <div style={{ fontSize: 11, color: "#9a8a8a", marginBottom: 6 }}>{desc}</div>
               <div style={{ fontSize: 10, color: "#3a2a3a", background: "#1a0e1a", borderRadius: 4, padding: "4px 8px", fontFamily: "monospace" }}>
                 Variáveis: {vars}
               </div>
@@ -3252,7 +3252,7 @@ const MaintenancePage = () => {
         <h1 style={{ fontSize: 26, color: "#f5f0e8", marginBottom: 12, lineHeight: 1.3 }}>{cfg.titulo || "Site em Manutenção"}</h1>
         <p style={{ fontSize: 14, color: "#7a6a6a", lineHeight: 1.7, marginBottom: 24 }}>{cfg.mensagem || "Estamos realizando melhorias para você. Voltamos em breve!"}</p>
         {cfg.previsao && <div style={{ display: "inline-block", background: "rgba(139,44,44,.2)", border: "1px solid #3a1f1f", borderRadius: 8, padding: "8px 20px", fontSize: 12, color: "#e8b4b4" }}>⏱ Previsão: {cfg.previsao}</div>}
-        {cfg.email && <div style={{ marginTop: 16, fontSize: 11, color: "#5a4a4a" }}>Dúvidas? <a href={`mailto:${cfg.email}`} style={{ color: "#e8b4b4" }}>{cfg.email}</a></div>}
+        {cfg.email && <div style={{ marginTop: 16, fontSize: 11, color: "#9a8a8a" }}>Dúvidas? <a href={`mailto:${cfg.email}`} style={{ color: "#e8b4b4" }}>{cfg.email}</a></div>}
       </div>
     </div>
   );
@@ -3392,9 +3392,9 @@ const TrackingWidget = () => {
           style={{ flex: 1, background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "10px 12px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif" }} />
         <button onClick={track} style={{ padding: "10px 18px", background: "#8b2c2c", border: "none", borderRadius: 4, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif" }}>🔍 Rastrear</button>
       </div>
-      <div style={{ marginTop: 12, fontSize: 11, color: "#5a4a4a", lineHeight: 1.7 }}>
+      <div style={{ marginTop: 12, fontSize: 11, color: "#9a8a8a", lineHeight: 1.7 }}>
         O código de rastreamento é enviado por e-mail após a confirmação do envio. Para dúvidas, entre em contato via{" "}
-        <a href="https://wa.me/5542998493579" target="_blank" rel="noreferrer" style={{ color: "#4ade80" }}>WhatsApp</a>.
+        <a href="https://wa.me/5542998493579" target="_blank" rel="noreferrer" aria-label="Falar pelo WhatsApp" style={{ color: "#4ade80" }}>WhatsApp</a>.
       </div>
     </div>
   );
@@ -3741,7 +3741,7 @@ export default function App() {
         {/* País de Origem — dropdown com países comuns + opção personalizada */}
         <div>
           <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>País de Origem</label>
-          <select value={["Argentina","Brasil","Chile","Portugal","França","Itália","Espanha","África do Sul","EUA","Uruguai","Austrália","Alemanha","Outro"].includes(obj.origin) || !obj.origin ? (obj.origin || "") : "Outro"}
+          <select aria-label="País de origem do vinho" value={["Argentina","Brasil","Chile","Portugal","França","Itália","Espanha","África do Sul","EUA","Uruguai","Austrália","Alemanha","Outro"].includes(obj.origin) || !obj.origin ? (obj.origin || "") : "Outro"}
             onChange={e => setObj(p => ({ ...p, origin: e.target.value === "Outro" ? "" : e.target.value }))}
             style={{ width: "100%", background: "#120e0c", border: "1px solid #2a1f1f", borderRadius: 4, padding: "9px 11px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif", marginBottom: 6 }}>
             <option value="">Selecione…</option>
@@ -3781,7 +3781,7 @@ export default function App() {
         {/* Categoria */}
         <div>
           <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>Categoria</label>
-          <select value={obj.category ?? "Tinto"} onChange={(e) => setObj((p) => ({ ...p, category: e.target.value }))}
+          <select aria-label="Categoria do vinho" value={obj.category ?? "Tinto"} onChange={(e) => setObj((p) => ({ ...p, category: e.target.value }))}
             style={{ width: "100%", background: "#120e0c", border: "1px solid #2a1f1f", borderRadius: 4, padding: "9px 11px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif" }}>
             {["Tinto","Branco","Espumante","Rosé"].map((c) => <option key={c}>{c}</option>)}
           </select>
@@ -4681,7 +4681,7 @@ self.addEventListener("fetch", e => {
                         {wine.description && <div style={{ fontSize: 10, color: "#6a5a5a", lineHeight: 1.45, marginBottom: 6, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{wine.description.slice(0, 72)}{wine.description.length > 72 ? "…" : ""}</div>}
                         <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginBottom: 6 }}>
                           <span style={{ fontSize: 16, color: "#fbbf24", fontWeight: "bold" }}>{fmt(wine.promoPrice)}</span>
-                          <span style={{ fontSize: 11, color: "#5a4a4a", textDecoration: "line-through" }}>{fmt(wine.price)}</span>
+                          <span style={{ fontSize: 11, color: "#9a8a8a", textDecoration: "line-through" }}>{fmt(wine.price)}</span>
                         </div>
                         <div style={{ marginBottom: 8 }}><PromoTimer wineId={wine.id} compact /></div>
                         <button className="btn-red" onClick={(e) => { e.stopPropagation(); addToCart(wine); }} style={{ width: "100%", padding: "7px", borderRadius: 4, fontSize: 10, letterSpacing: 1 }}>+ Carrinho</button>
@@ -4847,7 +4847,7 @@ self.addEventListener("fetch", e => {
                 );
               })()}
               {/* Ordenação */}
-              <select value={sortBy} onChange={e => setSortBy(e.target.value)}
+              <select aria-label="Ordenar produtos" value={sortBy} onChange={e => setSortBy(e.target.value)}
                 style={{ padding: "7px 12px", background: sortBy !== "default" ? "#8b2c2c" : "#1a1410", border: `1px solid ${sortBy !== "default" ? "#8b2c2c" : "#2a1f1f"}`, borderRadius: 4, color: "#f5f0e8", fontSize: 11, fontFamily: "Georgia,serif", cursor: "pointer" }}>
                 <option value="default">Ordenar ▾</option>
                 <option value="price_asc">💰 Menor preço</option>
@@ -4942,7 +4942,7 @@ self.addEventListener("fetch", e => {
         <div style={{ animation: "slideUp .4s ease" }}>
           <div style={{ maxWidth: 960, margin: "0 auto", padding: "32px 20px" }}>
             {/* Breadcrumb */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 18, fontSize: 11, color: "#5a4a4a" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 18, fontSize: 11, color: "#9a8a8a" }}>
               <span onClick={() => setSelectedWine(null)} style={{ cursor: "pointer", color: "#8b6060" }}>Loja</span>
               <span>›</span>
               <span onClick={() => { setSelectedWine(null); setFilter(selectedWine.category); }} style={{ cursor: "pointer", color: "#8b6060" }}>{selectedWine.category}</span>
@@ -5118,7 +5118,7 @@ self.addEventListener("fetch", e => {
                           );
                         })}
                       </div>
-                      <div style={{ marginTop: 10, fontSize: 11, color: "#5a4a4a", lineHeight: 1.6 }}>
+                      <div style={{ marginTop: 10, fontSize: 11, color: "#9a8a8a", lineHeight: 1.6 }}>
                         🔒 Pagamentos via <strong style={{ color: "#a09080" }}>Mercado Pago</strong> — não armazenamos dados do seu cartão.
                       </div>
                     </div>
@@ -5209,7 +5209,7 @@ self.addEventListener("fetch", e => {
                   {openInfoModal === "privacidade" && (
                     <div style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, padding: "16px 18px", marginBottom: 8, animation: "fadeIn .2s ease" }}>
                       <div style={{ fontSize: 10, letterSpacing: 2, color: "#a09080", textTransform: "uppercase", marginBottom: 14 }}>🔒 Política de Privacidade</div>
-                      <div style={{ fontSize: 11, color: "#5a4a4a", marginBottom: 12 }}>Última atualização: Janeiro de 2025 — Em conformidade com a LGPD (Lei nº 13.709/2018)</div>
+                      <div style={{ fontSize: 11, color: "#9a8a8a", marginBottom: 12 }}>Última atualização: Janeiro de 2025 — Em conformidade com a LGPD (Lei nº 13.709/2018)</div>
                       {[
                         ["Quais dados coletamos?", "Coletamos nome, e-mail, telefone, CPF e endereço de entrega fornecidos no momento da compra. Também coletamos dados de navegação como IP e cookies para melhorar sua experiência."],
                         ["Como usamos seus dados?", "Seus dados são usados exclusivamente para processar pedidos, enviar atualizações de entrega, emitir nota fiscal e, com seu consentimento, enviar promoções por e-mail."],
@@ -5239,7 +5239,7 @@ self.addEventListener("fetch", e => {
                 {/* Harmonização */}
                 <div style={{ background: "#120e0c", border: "1px solid #2a1f1f", borderRadius: 10, padding: "18px 20px", marginTop: 14 }}>
                   <div style={{ fontSize: 9, letterSpacing: 3, color: "#8b6060", textTransform: "uppercase", marginBottom: 10 }}>🍽 Harmonização</div>
-                  <p style={{ fontSize: 11, color: "#5a4a4a", marginBottom: 12 }}>Este {selectedWine.category.toLowerCase()} combina com:</p>
+                  <p style={{ fontSize: 11, color: "#9a8a8a", marginBottom: 12 }}>Este {selectedWine.category.toLowerCase()} combina com:</p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {(selectedWine.harmonization
                       ? selectedWine.harmonization.split(",").map(s => s.trim()).filter(Boolean)
@@ -5310,7 +5310,7 @@ self.addEventListener("fetch", e => {
                     <div style={{ fontSize: 12, fontWeight: "bold", marginBottom: 2 }}>{item.name}</div>
                     {item.promoPrice && <div style={{ marginBottom: 4 }}><PromoTimer wineId={item.id} compact /></div>}
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-                      <button onClick={() => updateCartQty(item.id, -1)} aria-label="Diminuir quantidade" style={{ width: 22, height: 22, background: "#2a1f1f", border: "none", borderRadius: 3, color: "#e8b4b4", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                      <button onClick={() => updateCartQty(item.id, -1)} aria-label="Diminuir quantidade" style={{ width: 36, height: 36, background: "#2a1f1f", border: "none", borderRadius: 3, color: "#e8b4b4", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
                       <span style={{ fontSize: 12, color: "#f5f0e8", minWidth: 18, textAlign: "center" }}>{item.qty}</span>
                       <button onClick={() => updateCartQty(item.id, 1)} aria-label="Aumentar quantidade" style={{ width: 22, height: 22, background: "#2a1f1f", border: "none", borderRadius: 3, color: "#e8b4b4", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
                       <span style={{ fontSize: 10, color: item.promoPrice ? "#fbbf24" : "#8b6060", marginLeft: 4 }}>{fmt(item.promoPrice || item.price)} × {item.qty}</span>
@@ -5318,7 +5318,7 @@ self.addEventListener("fetch", e => {
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ color: "#e8b4b4", fontWeight: "bold", fontSize: 12 }}>{fmt((item.promoPrice || item.price) * item.qty)}</div>
-                    <button onClick={() => removeFromCart(item.id)} style={{ background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>remover</button>
+                    <button onClick={() => removeFromCart(item.id)} style={{ background: "none", border: "none", color: "#8a7a7a", cursor: "pointer", fontSize: 10, fontFamily: "Georgia,serif" }}>remover</button>
                   </div>
                 </div>
               ))}
@@ -5761,7 +5761,7 @@ self.addEventListener("fetch", e => {
                     </button>
                   </div>
                 )}
-                <p style={{ fontSize: 11, color: "#5a4a4a" }}>Esta janela fechará automaticamente…</p>
+                <p style={{ fontSize: 11, color: "#9a8a8a" }}>Esta janela fechará automaticamente…</p>
               </div>
             )}
           </div>
@@ -6100,7 +6100,7 @@ self.addEventListener("fetch", e => {
                           <td style={{ padding: "9px 12px", color: "#e8b4b4" }}>{fmt(o.total)}</td>
                           <td style={{ padding: "9px 12px", color: "#7a6a6a" }}>{o.date}</td>
                           <td style={{ padding: "9px 12px" }}>
-                            <select value={o.status || "Aguardando"} onChange={async (e) => {
+                            <select aria-label="Status do pedido" value={o.status || "Aguardando"} onChange={async (e) => {
                               const novoStatus = e.target.value;
                               const atualizado = { ...o, status: novoStatus };
                               const updated = orders.map(x => (x.id === o.id) ? atualizado : x);
@@ -6336,7 +6336,7 @@ self.addEventListener("fetch", e => {
                   {paymentGateway === "stripe" && <div style={{ fontSize: 12, color: "#7a6a6a", lineHeight: 1.9 }}>1. Acesse <strong style={{ color: "#e8b4b4" }}>dashboard.stripe.com</strong><br />2. Vá em <strong style={{ color: "#e8b4b4" }}>Developers → API Keys</strong><br />3. Copie a <strong style={{ color: "#e8b4b4" }}>Publishable Key</strong> e a <strong style={{ color: "#e8b4b4" }}>Secret Key</strong></div>}
                   {paymentGateway === "pagarme" && <div style={{ fontSize: 12, color: "#7a6a6a", lineHeight: 1.9 }}>1. Acesse <strong style={{ color: "#e8b4b4" }}>dashboard.pagar.me</strong><br />2. Vá em <strong style={{ color: "#e8b4b4" }}>Configurações → Chaves de API</strong><br />3. Copie a <strong style={{ color: "#e8b4b4" }}>API Key</strong> e a <strong style={{ color: "#e8b4b4" }}>Encryption Key</strong></div>}
                   {paymentGateway === "cielo" && <div style={{ fontSize: 12, color: "#7a6a6a", lineHeight: 1.9 }}>1. Acesse <strong style={{ color: "#e8b4b4" }}>developercielo.github.io</strong><br />2. Crie uma conta no <strong style={{ color: "#e8b4b4" }}>Portal de Developers Cielo</strong><br />3. Copie o <strong style={{ color: "#e8b4b4" }}>MerchantId</strong> e a <strong style={{ color: "#e8b4b4" }}>MerchantKey</strong></div>}
-                  {paymentGateway === "asaas" && <div style={{ fontSize: 12, color: "#7a6a6a", lineHeight: 1.9 }}>1. Acesse <strong style={{ color: "#e8b4b4" }}>asaas.com</strong> e crie sua conta<br />2. Vá em <strong style={{ color: "#e8b4b4" }}>Minha Conta → Configurações → Integrações</strong><br />3. Clique em <strong style={{ color: "#e8b4b4" }}>Chave de API</strong> e copie sua <strong style={{ color: "#e8b4b4" }}>API Key</strong><br />4. Para sandbox use a chave do ambiente de <strong style={{ color: "#e8b4b4" }}>homologação</strong> em <strong style={{ color: "#e8b4b4" }}>sandbox.asaas.com</strong><br /><br /><a href="https://docs.asaas.com" target="_blank" rel="noopener noreferrer" style={{ color: "#e8b4b4" }}>📖 Ver documentação completa →</a></div>}
+                  {paymentGateway === "asaas" && <div style={{ fontSize: 12, color: "#7a6a6a", lineHeight: 1.9 }}>1. Acesse <strong style={{ color: "#e8b4b4" }}>asaas.com</strong> e crie sua conta<br />2. Vá em <strong style={{ color: "#e8b4b4" }}>Minha Conta → Configurações → Integrações</strong><br />3. Clique em <strong style={{ color: "#e8b4b4" }}>Chave de API</strong> e copie sua <strong style={{ color: "#e8b4b4" }}>API Key</strong><br />4. Para sandbox use a chave do ambiente de <strong style={{ color: "#e8b4b4" }}>homologação</strong> em <strong style={{ color: "#e8b4b4" }}>sandbox.asaas.com</strong><br /><br /><a href="https://docs.asaas.com" target="_blank" rel="noopener noreferrer" aria-label="Ver documentação completa do Asaas" style={{ color: "#e8b4b4" }}>📖 Ver documentação completa →</a></div>}
                   <div style={{ marginTop: 14, padding: "10px 14px", background: "rgba(139,44,44,.06)", border: "1px solid rgba(139,44,44,.15)", borderRadius: 6, fontSize: 11, color: "#8b6060" }}>
                     🔒 As chaves ficam salvas apenas no estado local desta sessão. Em produção, armazene-as em variáveis de ambiente seguras no seu servidor.
                   </div>
@@ -6392,11 +6392,11 @@ self.addEventListener("fetch", e => {
       {showWelcomePopup && <WelcomePopup onClose={() => { setShowWelcomePopup(false); try { localStorage.setItem("v9_popup_shown","1"); } catch {} }} />}
 
       {/* 💚 WhatsApp Flutuante */}
-      <a href="https://wa.me/5542998493579?text=Olá! Vim pelo site Vinhos9 e gostaria de ajuda." target="_blank" rel="noreferrer"
+      <a href="https://wa.me/5542998493579?text=Olá! Vim pelo site Vinhos9 e gostaria de ajuda." target="_blank" rel="noreferrer" aria-label="Falar com suporte pelo WhatsApp"
         style={{ position: "fixed", bottom: 24, right: 24, zIndex: 9999, width: 56, height: 56, borderRadius: "50%", background: "#25d366", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 20px rgba(37,211,102,.5)", transition: "transform .2s", textDecoration: "none" }}
         onMouseEnter={e => e.currentTarget.style.transform = "scale(1.1)"}
         onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
-        <svg width="28" height="28" viewBox="0 0 24 24" fill="white">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="white" aria-hidden="true">
           <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
         </svg>
       </a>
