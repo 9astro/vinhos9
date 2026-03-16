@@ -2815,7 +2815,7 @@ const CSVPanel = ({ importCSV, showToast }) => {
   const [aiImg, setAiImg] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiCSV, setAiCSV] = useState("");
-  const [apiKey, setApiKey] = useState(() => { try { return localStorage.getItem("v9_gemini_key") || "AIzaSyA0AopXkvI0DvLEF0jastSRqY2kv9Cz740"; } catch { return "AIzaSyA0AopXkvI0DvLEF0jastSRqY2kv9Cz740"; } });
+  const [apiKey, setApiKey] = useState(() => { try { return localStorage.getItem("v9_gemini_key") || "AIzaSyDWUKVJqqRvv3il3papqbwEfxgkZ-JSBDs"; } catch { return "AIzaSyDWUKVJqqRvv3il3papqbwEfxgkZ-JSBDs"; } });
   const [showKey, setShowKey] = useState(false);
 
   const saveKey = (k) => { setApiKey(k); try { localStorage.setItem("v9_gemini_key", k); } catch {} };
