@@ -1,8 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
-const CAT_EMOJI_MAP = {"Todos":"🍾","Tinto":"🍷","Branco":"🥂","Espumante":"✨","Rosé":"🌹","Sobremesa":"🍯","Natural":"🌿","Importado":"🌍","Nacional":"🇧🇷"};
-const COUNTRY_FLAG = {"Argentina":"🇦🇷","Brasil":"🇧🇷","Chile":"🇨🇱","Portugal":"🇵🇹","França":"🇫🇷","Itália":"🇮🇹","Espanha":"🇪🇸","África do Sul":"🇿🇦","EUA":"🇺🇸","Uruguai":"🇺🇾","Austrália":"🇦🇺","Alemanha":"🇩🇪","Nova Zelândia":"🇳🇿","Todos":"🌍","Brazil":"🇧🇷","France":"🇫🇷","Italy":"🇮🇹","Spain":"🇪🇸"};
-
 // ── Preconnect hints (melhora LCP/FCP) ───────────────────────────────────────
 const PreconnectHints = () => {
   useEffect(() => {
@@ -859,17 +856,6 @@ const Carousel = ({ items, onSelect, title, subtitle, accentColor = "#e8b4b4", a
     return () => clearInterval(timerRef.current);
   }, [startTimer]);
 
-  const drag = useRef({ on: false, x: 0, moved: false });
-  const onDragStart = (x) => { drag.current = { on: true, x, moved: false }; pausedRef.current = true; };
-  const onDragMove = (x) => { if (drag.current.on && Math.abs(x - drag.current.x) > 8) drag.current.moved = true; };
-  const onDragEnd = (x) => {
-    if (!drag.current.on) return;
-    const diff = drag.current.x - x;
-    drag.current.on = false;
-    pausedRef.current = false;
-    if (Math.abs(diff) > 40) go(diff > 0 ? "right" : "left");
-  };
-
   const visibleItems = total <= VISIBLE
     ? items
     : items.slice(index, index + VISIBLE).concat(
@@ -945,21 +931,14 @@ const Carousel = ({ items, onSelect, title, subtitle, accentColor = "#e8b4b4", a
         )}
       </div>
 
-      {/* Track — drag/swipe */}
-      <div style={{ overflow: "hidden", position: "relative", cursor: "grab", userSelect: "none" }}
-        onMouseDown={e => onDragStart(e.clientX)}
-        onMouseMove={e => onDragMove(e.clientX)}
-        onMouseUp={e => onDragEnd(e.clientX)}
-        onMouseLeave={e => { if (drag.current.on) onDragEnd(e.clientX); }}
-        onTouchStart={e => onDragStart(e.touches[0].clientX)}
-        onTouchMove={e => onDragMove(e.touches[0].clientX)}
-        onTouchEnd={e => onDragEnd(e.changedTouches[0].clientX)}>
+      {/* Track */}
+      <div style={{ overflow: "hidden", position: "relative" }}>
         <div style={trackStyle}>
           {visibleItems.map((wine) => {
             const activePrice = wine.promoPrice || wine.price;
             return (
               <div key={wine.id + "-" + index}
-                onClick={() => { if (!drag.current.moved) onSelect(wine); }}
+                onClick={() => onSelect(wine)}
                 style={{ cursor: "pointer", background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, overflow: "hidden", transition: "all .25s" }}
                 onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-5px)"; e.currentTarget.style.boxShadow = "0 14px 40px rgba(139,44,44,.3)"; e.currentTarget.style.borderColor = "#3a2a2a"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = ""; e.currentTarget.style.boxShadow = ""; e.currentTarget.style.borderColor = "#2a1f1f"; }}>
@@ -1306,17 +1285,7 @@ const FreteCalculator = ({ wine }) => {
         </div>
       )}
 
-      <style>{`@keyframes spin{to{transform:rotate(360deg)}}
-        .wine-card{transition:transform .25s ease,box-shadow .25s ease,border-color .25s ease!important;cursor:pointer}
-        @media(hover:hover){
-          .wine-card:hover{transform:translateY(-6px)!important;box-shadow:0 20px 50px rgba(139,44,44,.22)!important;border-color:#3d2525!important}
-          .wine-card:hover .wc-btn-add{opacity:1!important;transform:translateY(0)!important}
-          .wine-card:hover .wc-hint{opacity:1!important}
-        }
-        @media(hover:none){.wc-btn-add{opacity:1!important;transform:none!important}.wc-hint{display:none}}
-        .wc-btn-add{opacity:0;transform:translateY(6px);transition:opacity .22s ease,transform .22s ease!important}
-        .wc-hint{opacity:0;transition:opacity .25s ease}
-      `}</style>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
     </div>
   );
 };
@@ -3434,6 +3403,7 @@ const TrackingWidget = () => {
 export default function App() {
   const [page, setPage] = useState("store");
   const [adminTab, setAdminTab] = useState("dashboard");
+  const [sideCol, setSideCol] = useState(true);
   const [wines, setWines] = useState(INITIAL_WINES);
   const [cart, setCart] = useState([]);
   const [filter, setFilter] = useState("Todos");
@@ -4770,36 +4740,18 @@ self.addEventListener("fetch", e => {
 
           {/* Catálogo */}
           <div id="catalog" className="cat-pad" style={{ padding: "32px 36px 0", maxWidth: 1200, margin: "0 auto" }}>
-            <div style={{ marginBottom: 22, display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 10 }}>
-              <div>
-                <div style={{ fontSize: 9, letterSpacing: 4, color: "#8b5050", textTransform: "uppercase", marginBottom: 7, display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ display: "inline-block", width: 22, height: 1, background: "#8b5050", opacity: .6 }} />
-                  Nosso Catálogo
-                  <span style={{ display: "inline-block", width: 22, height: 1, background: "#8b5050", opacity: .6 }} />
-                </div>
-                <h2 style={{ fontSize: 24, color: "#f5f0e8", display: "flex", alignItems: "center", gap: 10 }}>
-                  🍷 Todos os Vinhos
-                  <span style={{ fontSize: 13, color: "#5a4a4a", fontWeight: "normal" }}>({filteredWines.length})</span>
-                </h2>
-              </div>
-              {(search || filter !== "Todos" || countryFilter !== "Todos" || priceRange[0] > 0 || priceRange[1] < 3000 || sortBy !== "default") && (
-                <button onClick={() => { setSearch(""); setFilter("Todos"); setCountryFilter("Todos"); setPriceRange([0,3000]); setSortBy("default"); }}
-                  style={{ background: "none", border: "1px solid #3a2a2a", borderRadius: 20, color: "#9a8a8a", padding: "5px 14px", cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif", transition: "all .2s" }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = "#8b2c2c"; e.currentTarget.style.color = "#e8b4b4"; }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = "#3a2a2a"; e.currentTarget.style.color = "#9a8a8a"; }}>
-                  ✕ Limpar filtros
-                </button>
-              )}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 9, letterSpacing: 4, color: "#8b6060", textTransform: "uppercase", marginBottom: 4 }}>Nosso Catálogo</div>
+              <h2 style={{ fontSize: 20, color: "#f5f0e8" }}>Todos os Vinhos</h2>
             </div>
             <div className="filters-row" style={{ display: "flex", gap: 12, alignItems: "flex-start", flexWrap: "wrap", marginBottom: 22 }}>
               {/* Autocomplete Search */}
               <div style={{ flex: 1, minWidth: 190, position: "relative" }}>
-                <span style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", fontSize: 14, pointerEvents: "none", zIndex: 1 }}>🔍</span>
                 <input value={search} onChange={(e) => { setSearch(e.target.value); setShowAutocomplete(e.target.value.length > 0); }}
-                  onFocus={e => { e.target.style.borderColor = "#8b2c2c"; if (search.length > 0) setShowAutocomplete(true); }}
-                  onBlur={e => { e.target.style.borderColor = "#2a1f1f"; setTimeout(() => setShowAutocomplete(false), 180); }}
-                  placeholder="Buscar vinho ou origem..." aria-label="Buscar vinhos"
-                  style={{ width: "100%", background: "#1a1410", border: "1px solid #2a1f1f", borderRadius: 8, padding: "10px 13px 10px 34px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif", transition: "border-color .2s", boxSizing: "border-box" }} />
+                  onFocus={() => search.length > 0 && setShowAutocomplete(true)}
+                  onBlur={() => setTimeout(() => setShowAutocomplete(false), 180)}
+                  placeholder="Buscar vinho ou origem..."
+                  style={{ width: "100%", background: "#1a1410", border: "1px solid #2a1f1f", borderRadius: 4, padding: "9px 13px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif" }} />
                 {showAutocomplete && search.length > 0 && (() => {
                   const suggestions = wines.filter(w =>
                     w.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -4859,15 +4811,7 @@ self.addEventListener("fetch", e => {
                 )}
               </div>
               <div className="cat-btns" style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-                {CATEGORIES.map((cat) => {
-                  const active = filter === cat;
-                  return (
-                    <button key={cat} aria-pressed={active} onClick={() => setFilter(cat)}
-                      style={{ padding: "7px 14px", borderRadius: 20, border: `1px solid ${active ? "#8b2c2c" : "#2a1f1f"}`, background: active ? "linear-gradient(135deg,#8b2c2c,#a83535)" : "rgba(26,20,16,.8)", color: active ? "#fff" : "#a09080", cursor: "pointer", fontSize: 12, fontFamily: "Georgia,serif", transition: "all .2s", display: "flex", alignItems: "center", gap: 5, boxShadow: active ? "0 3px 12px rgba(139,44,44,.35)" : "none" }}>
-                      {CAT_EMOJI_MAP[cat] || "🍶"} {cat}
-                    </button>
-                  );
-                })}
+                {CATEGORIES.map((c) => <button key={c} aria-pressed={filter === c} onClick={() => setFilter(c)} style={{ padding: "6px 13px", borderRadius: 4, border: `1px solid ${filter === c ? "#8b2c2c" : "#2a1f1f"}`, background: filter === c ? "#8b2c2c" : "transparent", color: filter === c ? "#fff" : "#a09080", cursor: "pointer", fontSize: 11, letterSpacing: 1, fontFamily: "Georgia,serif", transition: "all .2s" }}>{c}</button>)}
               </div>
               {/* Filtro por País — dinâmico baseado nos vinhos cadastrados */}
               {(() => {
@@ -4875,14 +4819,28 @@ self.addEventListener("fetch", e => {
                 if (countries.length <= 2) return null; // só mostra se tiver mais de 1 país
                 return (
                   <div style={{ display: "flex", gap: 7, flexWrap: "wrap", paddingTop: 4 }}>
-                    <span style={{ fontSize: 9, letterSpacing: 2, color: "#8a7a8a", textTransform: "uppercase", alignSelf: "center", paddingRight: 4, fontFamily: "Georgia,serif" }}>🌍 País</span>
-                    {countries.map(cn => {
-                      const flag = COUNTRY_FLAG[cn] ?? "🍷";
-                      const active = countryFilter === cn;
+                    <span style={{ fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", alignSelf: "center", paddingRight: 4 }}>País</span>
+                    {countries.map(c => {
+                      const FLAG_MAP = {
+                        "Argentina":"🇦🇷","Brasil":"🇧🇷","Brazil":"🇧🇷",
+                        "Chile":"🇨🇱","Portugal":"🇵🇹","França":"🇫🇷","France":"🇫🇷",
+                        "Itália":"🇮🇹","Italy":"🇮🇹","Espanha":"🇪🇸","Spain":"🇪🇸",
+                        "África do Sul":"🇿🇦","South Africa":"🇿🇦","Africa do Sul":"🇿🇦",
+                        "EUA":"🇺🇸","USA":"🇺🇸","Estados Unidos":"🇺🇸","United States":"🇺🇸",
+                        "Uruguai":"🇺🇾","Uruguay":"🇺🇾",
+                        "Austrália":"🇦🇺","Australia":"🇦🇺",
+                        "Alemanha":"🇩🇪","Germany":"🇩🇪",
+                        "Nova Zelândia":"🇳🇿","New Zealand":"🇳🇿",
+                        "Grécia":"🇬🇷","Greece":"🇬🇷",
+                        "Hungria":"🇭🇺","Hungary":"🇭🇺","Áustria":"🇦🇹","Austria":"🇦🇹",
+                        "Todos":"🌍",
+                      };
+                      const flag = FLAG_MAP[c] ?? (c === "Todos" ? "🌍" : "🍷");
+                      const active = countryFilter === c;
                       return (
-                        <button key={cn} onClick={() => setCountryFilter(cn)}
-                          style={{ padding: "6px 13px", borderRadius: 20, border: `1px solid ${active ? "#6b4c9a" : "#2a1f1f"}`, background: active ? "linear-gradient(135deg,#6b4c9a,#8060b8)" : "rgba(26,20,16,.8)", color: active ? "#fff" : "#a09080", cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif", transition: "all .2s", display: "flex", alignItems: "center", gap: 5, boxShadow: active ? "0 3px 12px rgba(107,76,154,.35)" : "none" }}>
-                          {flag} {cn}
+                        <button key={c} onClick={() => setCountryFilter(c)}
+                          style={{ padding: "5px 12px", borderRadius: 4, border: `1px solid ${active ? "#6b4c9a" : "#2a1f1f"}`, background: active ? "#6b4c9a" : "transparent", color: active ? "#fff" : "#a09080", cursor: "pointer", fontSize: 11, letterSpacing: 1, fontFamily: "Georgia,serif", transition: "all .2s" }}>
+                          {flag} {c}
                         </button>
                       );
                     })}
@@ -4891,8 +4849,8 @@ self.addEventListener("fetch", e => {
               })()}
               {/* Ordenação */}
               <select aria-label="Ordenar produtos" value={sortBy} onChange={e => setSortBy(e.target.value)}
-                style={{ padding: "8px 14px", background: sortBy !== "default" ? "linear-gradient(135deg,#8b2c2c,#a83535)" : "#1a1410", border: `1px solid ${sortBy !== "default" ? "#8b2c2c" : "#2a1f1f"}`, borderRadius: 8, color: "#f5f0e8", fontSize: 12, fontFamily: "Georgia,serif", cursor: "pointer", boxShadow: sortBy !== "default" ? "0 3px 12px rgba(139,44,44,.3)" : "none" }}>
-                <option value="default">📊 Ordenar</option>
+                style={{ padding: "7px 12px", background: sortBy !== "default" ? "#8b2c2c" : "#1a1410", border: `1px solid ${sortBy !== "default" ? "#8b2c2c" : "#2a1f1f"}`, borderRadius: 4, color: "#f5f0e8", fontSize: 11, fontFamily: "Georgia,serif", cursor: "pointer" }}>
+                <option value="default">Ordenar ▾</option>
                 <option value="price_asc">💰 Menor preço</option>
                 <option value="price_desc">💎 Maior preço</option>
                 <option value="rating">⭐ Melhor avaliação</option>
@@ -4906,46 +4864,42 @@ self.addEventListener("fetch", e => {
                 const activePrice = wine.promoPrice || wine.price;
                 const isWishlisted = wishlist.includes(wine.id);
                 return (
-                  <div key={wine.id} className="wine-card"
-                    onClick={() => { setSelectedWine(wine); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                    style={{ background: "linear-gradient(160deg,#1c1210,#130e0c)", border: "1px solid #2a1f1f", borderRadius: 14, overflow: "hidden", animation: `fadeIn .4s ease ${i * .05}s both`, position: "relative", display: "flex", flexDirection: "column" }}>
+                  <div key={wine.id} className="wine-card" onClick={() => { setSelectedWine(wine); window.scrollTo({ top: 0, behavior: "smooth" }); }} style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 12, overflow: "hidden", animation: `fadeIn .4s ease ${i * .05}s both`, position: "relative", display: "flex", flexDirection: "column" }}>
+                    {/* Imagem quadrada 1:1 */}
                     <div style={{ width: "100%", aspectRatio: "1/1", position: "relative", overflow: "hidden", flexShrink: 0 }}>
                       <WineThumb wine={wine} height="100%" />
-                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,transparent 40%,rgba(10,6,5,.88))" }} />
-                      {wine.promoPrice && (
-                        <span style={{ position: "absolute", top: 10, left: 10, background: "linear-gradient(135deg,#b45309,#92400e)", color: "#fef3c7", fontSize: 9, padding: "3px 9px", borderRadius: 20, fontWeight: "bold", letterSpacing: 1, boxShadow: "0 2px 8px rgba(180,83,9,.4)" }}>
-                          🏷 -{discountPct(wine.price, wine.promoPrice)}%
-                        </span>
-                      )}
-                      <span style={{ position: "absolute", top: 10, right: 10, background: "rgba(139,44,44,.82)", backdropFilter: "blur(4px)", color: "#fce8e8", fontSize: 9, padding: "3px 8px", borderRadius: 20 }}>
-                        {CAT_EMOJI_MAP[wine.category] || "🍾"} {wine.category}
-                      </span>
-                      <div className="wc-hint" style={{ position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", background: "rgba(0,0,0,.6)", backdropFilter: "blur(4px)", borderRadius: 20, padding: "3px 10px", fontSize: 9, color: "rgba(245,240,232,.85)", whiteSpace: "nowrap" }}>🔍 Ver detalhes</div>
-                      <button onClick={(e) => toggleWishlist(e, wine.id)} aria-label={isWishlisted ? "Remover dos favoritos" : "Adicionar aos favoritos"}
-                        style={{ position: "absolute", bottom: 10, right: 10, background: isWishlisted ? "rgba(139,44,44,.92)" : "rgba(15,10,10,.72)", backdropFilter: "blur(6px)", border: `1px solid ${isWishlisted ? "#c04040" : "rgba(255,255,255,.12)"}`, borderRadius: "50%", width: 34, height: 34, cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}>
+                      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to bottom,transparent 55%,rgba(12,10,9,.8))" }} />
+                      {wine.promoPrice && <span style={{ position: "absolute", top: 10, left: 10, background: "#b45309", color: "#fef3c7", fontSize: 9, padding: "2px 8px", borderRadius: 3, fontWeight: "bold", letterSpacing: 1 }}>-{discountPct(wine.price, wine.promoPrice)}%</span>}
+                      <span style={{ position: "absolute", top: 10, right: 10, background: "#8b2c2c", color: "#fff", fontSize: 9, padding: "2px 7px", borderRadius: 3 }}>{wine.category}</span>
+                      {/* ❤️ Wishlist button */}
+                      <button onClick={(e) => toggleWishlist(e, wine.id)} aria-label="Adicionar aos favoritos"
+                        style={{ position: "absolute", bottom: 10, right: 10, background: isWishlisted ? "rgba(139,44,44,.9)" : "rgba(20,14,14,.7)", border: `1px solid ${isWishlisted ? "#8b2c2c" : "rgba(255,255,255,.1)"}`, borderRadius: "50%", width: 30, height: 30, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s", color: isWishlisted ? "#fff" : "#a09080" }}>
                         {isWishlisted ? "❤️" : "🤍"}
                       </button>
                       <div style={{ position: "absolute", bottom: 10, left: 12 }}>
-                        <div style={{ fontSize: 9, color: "rgba(245,240,232,.65)" }}>{wine.origin}{wine.year ? ` · ${wine.year}` : ""}</div>
+                        <div style={{ fontSize: 9, color: "rgba(245,240,232,.6)" }}>{wine.origin} · {wine.year}</div>
                       </div>
                     </div>
-                    <div style={{ padding: "13px 14px 15px", display: "flex", flexDirection: "column", flex: 1 }}>
-                      <h3 className="wc-name" style={{ fontSize: 13, color: "#f5f0e8", marginBottom: 5, lineHeight: 1.35, fontWeight: "bold" }}>{wine.name}</h3>
-                      <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
-                        <Stars rating={wine.rating} />
-                        {wine.rating > 0 && <span style={{ fontSize: 10, color: "#9a8a7a" }}>({wine.rating})</span>}
+                    <div style={{ padding: "14px 14px 16px", display: "flex", flexDirection: "column", flex: 1 }}>
+                      <h3 className="wc-name" style={{ fontSize: 14, color: "#f5f0e8", marginBottom: 4 }}>{wine.name}</h3>
+                      <div style={{ marginBottom: 6 }}><Stars rating={wine.rating} /></div>
+                      <p className="wc-desc" style={{ fontSize: 11, color: "#7a6a6a", lineHeight: 1.55, marginBottom: 8, flex: 1 }}>{wine.description?.slice(0, 120)}{wine.description?.length > 120 ? "…" : ""}</p>
+                      {/* Low stock badge */}
+                      {wine.stock <= 3 && <div style={{ marginBottom: 8 }}><LowStockBadge stock={wine.stock} /></div>}
+                      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 4 }}>
+                        <span className="wc-price" style={{ fontSize: 17, color: wine.promoPrice ? "#fbbf24" : "#e8b4b4", fontWeight: "bold" }}>{fmt(activePrice)}</span>
+                        {wine.promoPrice && <span className="wc-old-price" style={{ fontSize: 10, color: "#5a4a4a", textDecoration: "line-through" }}>{fmt(wine.price)}</span>}
                       </div>
-                      <p className="wc-desc" style={{ fontSize: 11, color: "#8a7a6a", lineHeight: 1.55, marginBottom: 8, flex: 1 }}>{wine.description?.slice(0, 90)}{wine.description?.length > 90 ? "…" : ""}</p>
-                      {wine.stock <= 3 && <div style={{ marginBottom: 6 }}><LowStockBadge stock={wine.stock} /></div>}
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 7, marginBottom: wine.promoPrice ? 4 : 10 }}>
-                        <span className="wc-price" style={{ fontSize: 18, color: wine.promoPrice ? "#fbbf24" : "#e8b4b4", fontWeight: "bold" }}>{fmt(activePrice)}</span>
-                        {wine.promoPrice && <span style={{ fontSize: 11, color: "#6a5a5a", textDecoration: "line-through" }}>{fmt(wine.price)}</span>}
-                      </div>
-                      {wine.promoPrice && <div style={{ marginBottom: 8 }}><PromoTimer wineId={wine.id} compact /></div>}
-                      {wine.stock > 3 && <div style={{ fontSize: 9, color: "#6a5a5a", marginBottom: 10 }}>📦 {wine.stock} em estoque</div>}
-                      <button className="btn-red wc-btn-add" onClick={(e) => { e.stopPropagation(); addToCart(wine); }} disabled={wine.stock === 0} aria-label={`Adicionar ${wine.name} ao carrinho`}
-                        style={{ width: "100%", padding: "10px", borderRadius: 8, fontSize: 11, letterSpacing: 1, background: wine.stock === 0 ? "#2a1f1f" : "linear-gradient(135deg,#8b2c2c,#a83535)", color: wine.stock === 0 ? "#5a4a4a" : "#fff", cursor: wine.stock === 0 ? "not-allowed" : "pointer", marginTop: "auto", border: "none", boxShadow: wine.stock > 0 ? "0 4px 14px rgba(139,44,44,.3)" : "none" }}>
-                        {wine.stock === 0 ? "⚠️ Esgotado" : "🛒 Adicionar ao Carrinho"}
+                      {wine.promoPrice && (
+                        <div style={{ marginBottom: 6 }}>
+                          <PromoTimer wineId={wine.id} compact />
+                          
+                        </div>
+                      )}
+                      <div className="wc-stock" style={{ fontSize: 9, color: "#5a4a4a", marginBottom: 12 }}>{wine.stock > 0 ? `${wine.stock} em estoque` : ""}</div>
+                      <button className="btn-red" onClick={(e) => { e.stopPropagation(); addToCart(wine); }} disabled={wine.stock === 0} aria-label={`Adicionar ${wine.name} ao carrinho`}
+                        style={{ width: "100%", padding: "10px", borderRadius: 4, fontSize: 11, letterSpacing: 1, background: wine.stock === 0 ? "#2a1f1f" : "#8b2c2c", color: wine.stock === 0 ? "#5a4a4a" : "#fff", cursor: wine.stock === 0 ? "not-allowed" : "pointer", marginTop: "auto" }}>
+                        {wine.stock === 0 ? "Esgotado" : "🛒 Adicionar ao Carrinho"}
                       </button>
                     </div>
                   </div>
@@ -4989,30 +4943,14 @@ self.addEventListener("fetch", e => {
         <div style={{ animation: "slideUp .4s ease" }}>
           <div style={{ maxWidth: 960, margin: "0 auto", padding: "32px 20px" }}>
             {/* Breadcrumb */}
-            <nav aria-label="Caminho de navegação" style={{ marginBottom: 22 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14, fontSize: 11, flexWrap: "wrap" }}>
-                <span onClick={() => setSelectedWine(null)} role="button" tabIndex={0}
-                  onKeyDown={e => { if (e.key === "Enter") setSelectedWine(null); }}
-                  style={{ cursor: "pointer", color: "#c08070", fontFamily: "Georgia,serif", transition: "color .2s" }}
-                  onMouseEnter={e => e.currentTarget.style.color = "#e8b4b4"}
-                  onMouseLeave={e => e.currentTarget.style.color = "#c08070"}>🏠 Loja</span>
-                <span style={{ color: "#3a2a2a" }}>›</span>
-                <span onClick={() => { setSelectedWine(null); setFilter(selectedWine.category); }} role="button" tabIndex={0}
-                  onKeyDown={e => { if (e.key === "Enter") { setSelectedWine(null); setFilter(selectedWine.category); } }}
-                  style={{ cursor: "pointer", color: "#c08070", fontFamily: "Georgia,serif", transition: "color .2s" }}
-                  onMouseEnter={e => e.currentTarget.style.color = "#e8b4b4"}
-                  onMouseLeave={e => e.currentTarget.style.color = "#c08070"}>🍷 {selectedWine.category}</span>
-                <span style={{ color: "#3a2a2a" }}>›</span>
-                <span style={{ color: "#9a8a8a", fontFamily: "Georgia,serif", maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selectedWine.name}</span>
-              </div>
-              <button onClick={() => setSelectedWine(null)} aria-label="Voltar ao catálogo"
-                style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "linear-gradient(135deg,#1c1210,#231512)", border: "1px solid #3a2a2a", borderRadius: 8, color: "#e8b4b4", cursor: "pointer", fontSize: 12, letterSpacing: 1, padding: "9px 18px", fontFamily: "Georgia,serif", marginBottom: 26, transition: "all .2s", boxShadow: "0 2px 12px rgba(0,0,0,.35)" }}
-                onMouseEnter={e => { e.currentTarget.style.background = "linear-gradient(135deg,#2a1a14,#3a2018)"; e.currentTarget.style.borderColor = "#8b2c2c"; e.currentTarget.style.transform = "translateX(-3px)"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "linear-gradient(135deg,#1c1210,#231512)"; e.currentTarget.style.borderColor = "#3a2a2a"; e.currentTarget.style.transform = ""; }}>
-                <span style={{ fontSize: 16, lineHeight: 1 }}>←</span>
-                <span>Voltar ao catálogo</span>
-              </button>
-            </nav>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 18, fontSize: 11, color: "#9a8a8a" }}>
+              <span onClick={() => setSelectedWine(null)} style={{ cursor: "pointer", color: "#8b6060" }}>Loja</span>
+              <span>›</span>
+              <span onClick={() => { setSelectedWine(null); setFilter(selectedWine.category); }} style={{ cursor: "pointer", color: "#8b6060" }}>{selectedWine.category}</span>
+              <span>›</span>
+              <span style={{ color: "#a09080" }}>{selectedWine.name}</span>
+            </div>
+            <button onClick={() => setSelectedWine(null)} style={{ background: "none", border: "none", color: "#8b6060", cursor: "pointer", fontSize: 12, letterSpacing: 1, marginBottom: 26, display: "flex", alignItems: "center", gap: 6, fontFamily: "Georgia,serif" }}>← Voltar ao catálogo</button>
             <div className="detail-flex" style={{ display: "flex", gap: 44, alignItems: "flex-start" }}>
               {/* Imagem — grande no desktop, full width no mobile */}
               <div className="detail-img" style={{ width: 480, flexShrink: 0, aspectRatio: "1/1", borderRadius: 14, overflow: "hidden", border: "1px solid #2a1f1f", position: "relative", cursor: "zoom-in" }} onClick={() => setZoomWine(selectedWine)}>
@@ -5858,17 +5796,23 @@ self.addEventListener("fetch", e => {
       {/* ── ADM PAINEL ── */}
       {page === "admin" && isLoggedIn && (
         <div className="adm-layout" style={{ display: "flex", minHeight: "calc(100vh - 62px)", animation: "fadeIn .4s ease" }}>
-          <aside className="adm-sidebar" style={{ width: 200, background: "#100c0c", borderRight: "1px solid #2a1f1f", padding: "24px 0", display: "flex", flexDirection: "column" }}>
-            <div style={{ padding: "0 18px 18px", borderBottom: "1px solid #1a1410" }}>
+          <aside className="adm-sidebar" style={{ width: sideCol ? 200 : 52, background: "#100c0c", borderRight: "1px solid #2a1f1f", padding: "24px 0", display: "flex", flexDirection: "column", flexShrink: 0, transition: "width .25s ease", overflow: "hidden" }}>
+            <button onClick={() => setSideCol(p => !p)} title={sideCol ? "Fechar" : "Abrir"}
+              style={{ alignSelf: "flex-end", margin: "8px 8px 0", width: 26, height: 26, borderRadius: 6, background: "#1a1410", border: "1px solid #2a2020", color: "#8b6060", cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              {sideCol ? "◀" : "▶"}
+            </button>
+            <div style={{ padding: "8px 18px 16px", borderBottom: "1px solid #1a1410", display: sideCol ? "block" : "none" }}>
               <div style={{ fontSize: 8, letterSpacing: 3, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 3 }}>Painel</div>
               <div style={{ fontSize: 12, color: "#e8b4b4" }}>Administração</div>
             </div>
             <div style={{ flex: 1, overflowX: "auto", overflowY: "auto", display: "flex", flexDirection: "column" }} className="adm-tabs-wrap">
             {[["dashboard","📊","Dashboard"],["wines","🍷","Vinhos"],["add","➕","Cadastrar"],["csv","📥","Importar CSV"],["banners","🎨","Banners"],["promos","🏷","Promoções"],["cupons","🎁","Cupons"],["frete","🚚","Frete"],["social","📱","Redes Sociais"],["imagens","🖼","Galeria"],["orders","📦","Pedidos"],["reviews","⭐","Avaliações"],["emails","📧","E-mails"],["pagamento","💳","Pagamento"],["supabase","🗄️","Banco de Dados"],["seguranca","🔐","Segurança"]].map(([tab, icon, label]) => (
-              <button key={tab} className="adm-tab" onClick={() => setAdminTab(tab)} style={{ width: "100%", padding: "12px 18px", display: "flex", alignItems: "center", gap: 9, background: adminTab === tab ? "rgba(139,44,44,.3)" : "transparent", border: "none", color: adminTab === tab ? "#e8b4b4" : "#7a6a6a", cursor: "pointer", fontSize: 12, fontFamily: "Georgia,serif", textAlign: "left", borderLeft: adminTab === tab ? "3px solid #8b2c2c" : "3px solid transparent", transition: "all .2s" }}>
-                {icon} {label}
-                {tab === "promos" && promoWines.length > 0 && <span style={{ background: "#b45309", color: "#fef3c7", fontSize: 9, padding: "1px 6px", borderRadius: 10, marginLeft: "auto" }}>{promoWines.length}</span>}
-                {tab === "reviews" && reviews.filter(r => !r.approved).length > 0 && <span style={{ background: "#8b2c2c", color: "#fca5a5", fontSize: 9, padding: "1px 6px", borderRadius: 10, marginLeft: "auto" }}>{reviews.filter(r => !r.approved).length}</span>}
+              <button key={tab} className="adm-tab" onClick={() => setAdminTab(tab)} title={!sideCol ? label : ""}
+                style={{ width: "100%", padding: sideCol ? "12px 18px" : "13px 0", display: "flex", alignItems: "center", justifyContent: sideCol ? "flex-start" : "center", gap: 9, background: adminTab === tab ? "rgba(139,44,44,.3)" : "transparent", border: "none", color: adminTab === tab ? "#e8b4b4" : "#7a6a6a", cursor: "pointer", fontSize: sideCol ? 12 : 17, fontFamily: "Georgia,serif", textAlign: "left", borderLeft: adminTab === tab ? "3px solid #8b2c2c" : "3px solid transparent", transition: "all .2s", whiteSpace: "nowrap", overflow: "hidden" }}>
+                <span style={{ flexShrink: 0 }}>{icon}</span>
+                {sideCol && <span> {label}</span>}
+                {sideCol && tab === "promos" && promoWines.length > 0 && <span style={{ background: "#b45309", color: "#fef3c7", fontSize: 9, padding: "1px 6px", borderRadius: 10, marginLeft: "auto" }}>{promoWines.length}</span>}
+                {sideCol && tab === "reviews" && reviews.filter(r => !r.approved).length > 0 && <span style={{ background: "#8b2c2c", color: "#fca5a5", fontSize: 9, padding: "1px 6px", borderRadius: 10, marginLeft: "auto" }}>{reviews.filter(r => !r.approved).length}</span>}
               </button>
             ))}
             </div>
