@@ -585,7 +585,9 @@ Responda dúvidas sobre harmonização, temperatura de serviço, decantação, o
           generationConfig: { maxOutputTokens: 300 }
         })
       });
-      const data = await res.json();
+      const rawText = await res.text();
+      let data;
+      try { data = JSON.parse(rawText); } catch { data = { error: { message: `Resposta inválida (${res.status}): ${rawText.slice(0,100)}` } }; }
       if (data.error) {
         setSomHistory([...newHistory, { role: "assistant", content: `⚠️ Erro da API: ${data.error.message}` }]);
         setSomLoad(false); return;
@@ -2846,7 +2848,9 @@ const CSVPanel = ({ importCSV, showToast }) => {
           generationConfig: { maxOutputTokens: 1000 }
         })
       });
-      const data = await resp.json();
+      const rawText2 = await resp.text();
+      let data;
+      try { data = JSON.parse(rawText2); } catch { data = { error: { message: `Resposta inválida (${resp.status}): ${rawText2.slice(0,100)}` } }; }
       if (data.error) { showToast(`Erro da IA: ${data.error.message}`, "error"); setAiLoading(false); return; }
       const csv = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
       setAiCSV(csv);
@@ -3780,8 +3784,11 @@ Escreva em português brasileiro, tom elegante e convidativo, máximo 2 frases c
                       generationConfig: { maxOutputTokens: 150 }
                     })
                   });
-                  const data = await res.json();
-                  const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
+                  const rawText3 = await res.text();
+                  let data3;
+                  try { data3 = JSON.parse(rawText3); } catch { data3 = { error: { message: `Resposta inválida: ${rawText3.slice(0,100)}` } }; }
+                  if (data3.error) { showToast(`Erro IA: ${data3.error.message}`, "error"); setObj(p => ({ ...p, _aiLoading: false })); return; }
+                  const text = data3.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || "";
                   if (text) setObj(p => ({ ...p, description: text, _aiLoading: false }));
                   else { showToast("Não foi possível gerar a descrição.", "error"); setObj(p => ({ ...p, _aiLoading: false })); }
                 } catch(e) { showToast(`Erro: ${e.message}`, "error"); setObj(p => ({ ...p, _aiLoading: false })); }
