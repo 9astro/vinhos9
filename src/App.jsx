@@ -619,10 +619,13 @@ Responda dúvidas sobre harmonização, temperatura de serviço, decantação, o
                   "É encorpado ou leve?",
                   "Qual o sabor predominante?",
                   "Serve para presente?",
-                  "Qual a diferença deste para outros?",
                   "Vale o preço?",
+                  "Combina com churrasco?",
+                  "É bom para iniciantes?",
+                  "Qual taça usar?",
+                  "Pode guardar por quanto tempo?",
                 ].map(q => (
-                  <button key={q} onClick={() => setSomMsg(q)}
+                  <button key={q} onClick={() => { setSomMsg(q); setTimeout(() => document.getElementById("som-send-btn")?.click(), 50); }}
                     style={{ padding: "5px 10px", background: "rgba(139,44,44,.1)", border: "1px solid #2a1f1f", borderRadius: 14, color: "#a09080", fontSize: 11, cursor: "pointer", fontFamily: "Georgia,serif" }}>{q}</button>
                 ))}
               </div>
@@ -633,9 +636,7 @@ Responda dúvidas sobre harmonização, temperatura de serviço, decantação, o
               {somHistory.map((m, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
                   <div style={{ maxWidth: "85%", padding: "8px 12px", borderRadius: m.role === "user" ? "10px 10px 2px 10px" : "10px 10px 10px 2px", background: m.role === "user" ? "#8b2c2c" : "#1e1614", border: m.role === "assistant" ? "1px solid #2a1f1f" : "none", fontSize: 13, color: m.role === "user" ? "#fff" : "#d0c8c0", lineHeight: 1.6 }}>
-                    {somLoad && i === somHistory.length - 1 && m.role === "user"
-                      ? <span style={{ color: "#5a4a4a", fontSize: 11 }}>🍷 Pensando…</span>
-                      : m.content}
+                    {m.content}
                   </div>
                 </div>
               ))}
@@ -650,7 +651,7 @@ Responda dúvidas sobre harmonização, temperatura de serviço, decantação, o
             <input value={somMsg} onChange={e => setSomMsg(e.target.value)} onKeyDown={e => e.key === "Enter" && askSommelier()}
               placeholder="Pergunte ao sommelier..."
               style={{ flex: 1, background: "#120e0c", border: "1px solid #2a1f1f", borderRadius: 6, padding: "9px 12px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif", outline: "none" }} />
-            <button onClick={askSommelier} disabled={somLoad || !somMsg.trim()}
+            <button id="som-send-btn" onClick={askSommelier} disabled={somLoad || !somMsg.trim()}
               style={{ padding: "9px 14px", background: somLoad || !somMsg.trim() ? "#1a1410" : "#8b2c2c", border: "none", borderRadius: 6, color: somLoad || !somMsg.trim() ? "#4a3a3a" : "#fff", cursor: somLoad || !somMsg.trim() ? "not-allowed" : "pointer", fontSize: 16, transition: "all .2s" }}>➤</button>
           </div>
           {somHistory.length > 0 && (
@@ -2811,147 +2812,33 @@ const SocialPanel = ({ showToast }) => {
 // ─── Painel CSV com IA ────────────────────────────────────────────────────────
 const CSVPanel = ({ importCSV, showToast }) => {
   const csvRef = useRef(null);
-  const aiImgRef = useRef(null);
-  const [aiImg, setAiImg] = useState(null);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiCSV, setAiCSV] = useState("");
-  const [apiKey, setApiKey] = useState(() => { try { return localStorage.getItem("v9_gemini_key") || "AIzaSyDWUKVJqqRvv3il3papqbwEfxgkZ-JSBDs"; } catch { return "AIzaSyDWUKVJqqRvv3il3papqbwEfxgkZ-JSBDs"; } });
-  const [showKey, setShowKey] = useState(false);
-
-  const saveKey = (k) => { setApiKey(k); try { localStorage.setItem("v9_gemini_key", k); } catch {} };
-
-  const gerarCSV = async () => {
-    if (!aiImg) return showToast("Selecione uma imagem primeiro.", "error");
-    if (!apiKey.trim()) return showToast("Cole sua chave Google Gemini primeiro.", "error");
-    setAiLoading(true); setAiCSV("");
-    try {
-      const base64 = aiImg.split(",")[1];
-      const mime = aiImg.split(";")[0].split(":")[1];
-      const OR_KEY2 = apiKey.trim();
-      const csvPrompt = `Analise esta imagem de vinho e retorne APENAS uma linha CSV sem cabeçalho com os campos: name,origin,region,year,costPrice,price,promoPrice,stock,category,alcohol,grapes,description,keywords,harmonization,rating,sales. Responda SOMENTE a linha CSV.`;
-      const resp = await fetch(`https://openrouter.ai/api/v1/chat/completions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${OR_KEY2}`, "HTTP-Referer": "https://vinhos9.com.br", "X-Title": "Vinhos9" },
-        body: JSON.stringify({
-          model: "meta-llama/llama-3.2-11b-vision-instruct:free",
-          messages: [{ role: "user", content: [
-            { type: "image_url", image_url: { url: `data:${mime};base64,${base64}` } },
-            { type: "text", text: csvPrompt }
-          ]}],
-          max_tokens: 1000
-        })
-      });
-      const rawText2 = await resp.text();
-      let data;
-      try { data = JSON.parse(rawText2); } catch { data = { error: { message: `Resposta inválida (${resp.status}): ${rawText2.slice(0,100)}` } }; }
-      if (data.error) { showToast(`Erro da IA: ${data.error.message}`, "error"); setAiLoading(false); return; }
-      const csv = data.choices?.[0]?.message?.content?.trim() || "";
-      setAiCSV(csv);
-      showToast("CSV gerado pela IA! ✅");
-    } catch (e) { showToast(`Erro: ${e.message}`, "error"); }
-    setAiLoading(false);
-  };
-
-  const baixarCSV = (linhas) => {
-    const header = "name,origin,region,year,costPrice,price,promoPrice,stock,category,alcohol,grapes,description,keywords,harmonization,rating,sales\n";
-    const blob = new Blob([header + linhas + "\n"], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a"); a.href = url; a.download = "vinho-ia.csv"; a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const importarDireto = async () => {
-    const header = "name,origin,region,year,costPrice,price,promoPrice,stock,category,alcohol,grapes,description,keywords,harmonization,rating,sales\n";
-    const blob = new Blob([header + aiCSV + "\n"], { type: "text/csv" });
-    const f = new File([blob], "vinho-ia.csv", { type: "text/csv" });
-    await importCSV(f);
-    setAiCSV(""); setAiImg(null);
-  };
-
-  // Manutenção: bloqueia clientes (admins com ?adm=1 passam)
-
   return (
-    <div style={{ maxWidth: 620 }}>
-      <h1 style={{ fontSize: 21, marginBottom: 5 }}>📥 Importar Produtos via CSV</h1>
-      <p style={{ color: "#7a6a6a", fontSize: 13, marginBottom: 24 }}>Importe vários vinhos de uma vez. Imagens podem ser adicionadas após a importação.</p>
-
-      <div style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 10, padding: 22, marginBottom: 20 }}>
-        <div style={{ fontSize: 11, letterSpacing: 2, color: "#a09080", textTransform: "uppercase", marginBottom: 12 }}>📋 Template CSV</div>
-        <div style={{ background: "#0c0a09", borderRadius: 6, padding: "12px 14px", fontSize: 11, color: "#5a4a4a", fontFamily: "monospace", marginBottom: 14, overflowX: "auto", whiteSpace: "nowrap" }}>
-          name,origin,region,year,costPrice,price,promoPrice,stock,category,alcohol,grapes,description,keywords,harmonization,rating,sales
-        </div>
+    <div style={{ maxWidth: 600 }}>
+      <h1 style={{ fontSize: 21, marginBottom: 5 }}>📥 Importar CSV</h1>
+      <p style={{ color: "#7a6a6a", fontSize: 12, marginBottom: 20, lineHeight: 1.7 }}>
+        Importe vinhos em massa via arquivo CSV. Baixe o modelo abaixo para ver o formato correto.
+      </p>
+      <input type="file" accept=".csv" ref={csvRef} style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (f) importCSV(f); }} />
+      <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+        <button onClick={() => csvRef.current?.click()} style={{ padding: "11px 24px", background: "#8b2c2c", border: "none", borderRadius: 4, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif", letterSpacing: 1 }}>📂 Selecionar CSV</button>
         <button onClick={() => {
-          const header = "name,origin,region,year,costPrice,price,promoPrice,stock,category,alcohol,grapes,description,keywords,harmonization,rating,sales\n";
-          const example = ',Exemplo Vinho,Brasil,Serra Gaúcha,2022,80,149,,10,Tinto,13%,Merlot,"Vinho encorpado.",4.5,0\n';
-          const blob = new Blob([header + example], { type: "text/csv" });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement("a"); a.href = url; a.download = "template-vinhos9.csv"; a.click();
-          URL.revokeObjectURL(url);
-        }} style={{ padding: "9px 18px", background: "#1a1410", border: "1px solid #3a2f2f", color: "#e8b4b4", borderRadius: 4, cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif" }}>
-          ⬇ Baixar Template CSV
-        </button>
+          const h = "name,origin,region,year,costPrice,price,promoPrice,stock,category,alcohol,grapes,description,keywords,harmonization,rating,sales\n";
+          const b = new Blob([h], { type: "text/csv" });
+          const u = URL.createObjectURL(b);
+          const a = document.createElement("a"); a.href = u; a.download = "modelo-vinhos.csv"; a.click();
+          URL.revokeObjectURL(u);
+        }} style={{ padding: "11px 24px", background: "#1a1410", border: "1px solid #3a2f2f", borderRadius: 4, color: "#e8b4b4", cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif" }}>⬇ Baixar Modelo CSV</button>
       </div>
-
-      <div style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "2px dashed #2a1f1f", borderRadius: 10, padding: 32, textAlign: "center", marginBottom: 20 }}
-        onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = "#8b2c2c"; }}
-        onDragLeave={e => { e.currentTarget.style.borderColor = "#2a1f1f"; }}
-        onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = "#2a1f1f"; const f = e.dataTransfer.files[0]; if (f?.name.endsWith(".csv")) importCSV(f); else showToast("Envie um arquivo .csv", "error"); }}>
-        <div style={{ fontSize: 36, marginBottom: 12 }}>📄</div>
-        <p style={{ fontSize: 13, color: "#a09080", marginBottom: 16 }}>Arraste o CSV aqui ou clique para selecionar</p>
-        <input type="file" accept=".csv" style={{ display: "none" }} ref={csvRef} onChange={e => { const f = e.target.files?.[0]; if (f) importCSV(f); e.target.value = ""; }} />
-        <button onClick={() => csvRef.current?.click()} style={{ padding: "10px 24px", background: "#8b2c2c", border: "none", borderRadius: 4, color: "#fff", cursor: "pointer", fontSize: 12, fontFamily: "Georgia,serif", letterSpacing: 1 }}>
-          📂 Selecionar Arquivo CSV
-        </button>
-      </div>
-
-      <div style={{ background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #3a2a4a", borderRadius: 10, padding: 22 }}>
-        <div style={{ fontSize: 12, letterSpacing: 2, color: "#c084fc", textTransform: "uppercase", marginBottom: 6 }}>🤖 Gerar CSV com Inteligência Artificial</div>
-        <p style={{ fontSize: 13, color: "#7a6a6a", lineHeight: 1.7, marginBottom: 16 }}>Envie a foto de um vinho e a IA gera o CSV com <strong style={{ color: "#e8b4b4" }}>título SEO otimizado</strong> automaticamente.</p>
-
-        {/* Chave API */}
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ display: "block", fontSize: 11, color: "#5a4a4a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 6 }}>
-            🔑 Chave Google Gemini API — <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" style={{ color: "#c084fc", textDecoration: "none" }}>Obter grátis em aistudio.google.com</a>
-          </label>
-          <div style={{ display: "flex", gap: 8 }}>
-            <input
-              type={showKey ? "text" : "password"}
-              value={apiKey}
-              onChange={e => saveKey(e.target.value)}
-              placeholder="AIzaSy..."
-              style={{ flex: 1, background: "#0c0a09", border: "1px solid #3a2a4a", borderRadius: 4, padding: "9px 12px", color: "#c084fc", fontSize: 13, fontFamily: "monospace" }}
-            />
-            <button onClick={() => setShowKey(s => !s)} style={{ padding: "9px 14px", background: "#1a1410", border: "1px solid #3a2a4a", borderRadius: 4, color: "#7a6a6a", cursor: "pointer", fontSize: 13 }}>
-              {showKey ? "🙈" : "👁"}
-            </button>
-          </div>
-          <div style={{ fontSize: 11, color: "#3a2a4a", marginTop: 5 }}>A chave fica salva localmente no seu navegador.</div>
+      <div style={{ marginTop: 20, background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #2a1f1f", borderRadius: 8, padding: 16 }}>
+        <div style={{ fontSize: 11, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 10 }}>Colunas do CSV</div>
+        <div style={{ fontSize: 11, color: "#7a6a6a", fontFamily: "monospace", lineHeight: 2 }}>
+          name, origin, region, year, costPrice, price, promoPrice, stock, category, alcohol, grapes, description, keywords, harmonization, rating, sales
         </div>
-        <input type="file" accept="image/*" ref={aiImgRef} style={{ display: "none" }} onChange={e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = ev => setAiImg(ev.target.result); r.readAsDataURL(f); }} />
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-start", marginBottom: 14 }}>
-          <div>
-            <button onClick={() => aiImgRef.current?.click()} style={{ padding: "10px 18px", background: "#1a1410", border: "1px solid #3a2f4a", color: "#c084fc", borderRadius: 4, cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif" }}>🖼 Selecionar Imagem</button>
-            {aiImg && <div style={{ marginTop: 10 }}><img src={aiImg} alt="preview" style={{ width: 90, height: 90, objectFit: "cover", borderRadius: 8, border: "1px solid #3a2a4a" }} /></div>}
-          </div>
-          <button onClick={gerarCSV} disabled={!aiImg || aiLoading}
-            style={{ padding: "10px 22px", background: aiLoading ? "#2a1f2a" : "#6d28d9", border: "none", borderRadius: 4, color: "#fff", cursor: aiImg && !aiLoading ? "pointer" : "not-allowed", fontSize: 13, fontFamily: "Georgia,serif", letterSpacing: 1 }}>
-            {aiLoading ? "⏳ Analisando…" : "✨ Gerar CSV com IA"}
-          </button>
-        </div>
-        {aiCSV && (
-          <div>
-            <div style={{ fontSize: 11, color: "#5a4a4a", marginBottom: 6, letterSpacing: 1, textTransform: "uppercase" }}>CSV gerado:</div>
-            <div style={{ background: "#0c0a09", borderRadius: 6, padding: "10px 14px", fontSize: 11, color: "#4ade80", fontFamily: "monospace", marginBottom: 12, wordBreak: "break-all", lineHeight: 1.6 }}>{aiCSV}</div>
-            <div style={{ display: "flex", gap: 10 }}>
-              <button onClick={() => baixarCSV(aiCSV)} style={{ padding: "9px 18px", background: "#1a3a1a", border: "1px solid #4ade80", borderRadius: 4, color: "#4ade80", cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif" }}>⬇ Baixar CSV</button>
-              <button onClick={importarDireto} style={{ padding: "9px 18px", background: "#8b2c2c", border: "none", borderRadius: 4, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif" }}>📥 Importar direto</button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
 };
+
 
 // ─── Painel Segurança (componente próprio para evitar hook em IIFE) ───────────
 // ─── Painel Galeria de Imagens ────────────────────────────────────────────────
