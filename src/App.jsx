@@ -16,6 +16,9 @@ const PreconnectHints = () => {
       link.crossOrigin = "anonymous";
       document.head.appendChild(link);
     });
+    // Lang do documento
+    document.documentElement.lang = "pt-BR";
+    document.documentElement.setAttribute("lang", "pt-BR");
     // Preload dos ícones PWA do service worker
     ["/icon-192.png", "/icon-512.png"].forEach(href => {
       if (document.querySelector(`link[rel="preload"][href="${href}"]`)) return;
@@ -437,7 +440,7 @@ const BannersAdminPanel = ({ banners, saveBanners }) => {
                   <div style={{ fontSize: 9, color: "#3a2a2a", marginBottom: 8 }}>Rec: {rec} · JPG/WebP/PNG</div>
                   {eb[field] ? (
                     <div style={{ position: "relative", marginBottom: 8 }}>
-                      <img src={eb[field]} alt={lbl} style={{ width: "100%", height: 70, objectFit: "cover", borderRadius: 4 }} />
+                      <img src={eb[field]} alt={`Imagem do banner: ${lbl}`} style={{ width: "100%", height: 70, objectFit: "cover", borderRadius: 4 }} />
                       <button onClick={() => updateBanner(field, null)}
                         style={{ position: "absolute", top: 3, right: 3, background: "rgba(0,0,0,.75)", border: "none", color: "#ef4444", borderRadius: "50%", width: 20, height: 20, cursor: "pointer", fontSize: 11 }}>✕</button>
                     </div>
@@ -549,7 +552,7 @@ const ManualReviewForm = ({ wines, supaCfg, setReviews, showToast }) => {
         <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 8 }}>Nota</label>
         <div style={{ display: "flex", gap: 8 }}>
           {[1,2,3,4,5].map(n => (
-            <button key={n} onClick={() => setForm(p => ({ ...p, rating: n }))}
+            <button key={n} onClick={() => setForm(p => ({ ...p, rating: n }))} aria-label={`${n} estrela${n > 1 ? "s" : ""}`}
               style={{ width: 36, height: 36, borderRadius: 6, border: `1px solid ${form.rating >= n ? "#f59e0b" : "#2a1f1f"}`, background: form.rating >= n ? "rgba(245,158,11,.15)" : "#120e0c", color: form.rating >= n ? "#f59e0b" : "#5a4a4a", fontSize: 16, cursor: "pointer" }}>★</button>
           ))}
           <span style={{ fontSize: 13, color: "#a09080", marginLeft: 6, alignSelf: "center" }}>{form.rating}/5</span>
@@ -623,7 +626,7 @@ Responda dúvidas sobre harmonização, temperatura de serviço, decantação, o
 
   return (
     <div style={{ marginTop: 16, background: "linear-gradient(135deg,#1a0e0e,#120c0c)", border: "1px solid #3a1f1f", borderRadius: 10, overflow: "hidden" }}>
-      <button onClick={() => setSomOpen(p => !p)}
+      <button onClick={() => setSomOpen(p => !p)} aria-label="Sommelier Virtual - assistente de vinhos" aria-expanded={somOpen}
         style={{ width: "100%", padding: "12px 16px", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", color: "#e8b4b4", fontFamily: "Georgia,serif" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <span style={{ fontSize: 20 }}>🍷</span>
@@ -684,7 +687,7 @@ Responda dúvidas sobre harmonização, temperatura de serviço, decantação, o
               style={{ padding: "9px 14px", background: somLoad || !somMsg.trim() ? "#1a1410" : "#8b2c2c", border: "none", borderRadius: 6, color: somLoad || !somMsg.trim() ? "#4a3a3a" : "#fff", cursor: somLoad || !somMsg.trim() ? "not-allowed" : "pointer", fontSize: 16, transition: "all .2s" }}>➤</button>
           </div>
           {somHistory.length > 0 && (
-            <button onClick={() => setSomHistory([])} style={{ marginTop: 8, background: "none", border: "none", color: "#4a3a3a", cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif" }}>↺ Nova conversa</button>
+            <button onClick={() => setSomHistory([])} style={{ marginTop: 8, background: "none", border: "none", color: "#4a3a3a", cursor: "pointer", fontSize: 11, fontFamily: "Georgia,serif" }} aria-label="Iniciar nova conversa">↺ Nova conversa</button>
           )}
         </div>
       )}
@@ -706,7 +709,7 @@ const WelcomePopup = ({ onClose }) => {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 9998, background: "rgba(0,0,0,.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, animation: "fadeIn .3s ease" }}>
       <div style={{ background: "linear-gradient(145deg,#1a0a0a,#120808)", border: "1px solid #3a1f1f", borderRadius: 16, padding: "36px 32px", maxWidth: 420, width: "100%", position: "relative", textAlign: "center" }}>
-        <button onClick={onClose} style={{ position: "absolute", top: 14, right: 16, background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 20 }}>✕</button>
+        <button onClick={onClose} aria-label="Fechar sommelier" style={{ position: "absolute", top: 14, right: 16, background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 20 }}>✕</button>
         <div style={{ fontSize: 44, marginBottom: 12 }}>🍷</div>
         <div style={{ fontSize: 9, letterSpacing: 4, color: "#8b6060", textTransform: "uppercase", marginBottom: 8 }}>Oferta exclusiva</div>
         <h2 style={{ fontSize: 22, color: "#f5f0e8", marginBottom: 10, lineHeight: 1.3 }}>5% OFF na<br /><span style={{ color: "#e8b4b4" }}>sua primeira compra</span></h2>
@@ -795,7 +798,7 @@ const ImageZoomModal = ({ wine, onClose }) => {
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,.92)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", animation: "fadeIn .2s ease", cursor: "zoom-out" }}>
       <div onClick={e => e.stopPropagation()} style={{ position: "relative", maxWidth: 600, maxHeight: "90vh", width: "90vw", cursor: "default" }}>
-        <button onClick={onClose} style={{ position: "absolute", top: -14, right: -14, zIndex: 10, background: "#8b2c2c", border: "none", borderRadius: "50%", width: 32, height: 32, color: "#fff", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
+        <button onClick={onClose} aria-label="Fechar imagem" style={{ position: "absolute", top: -14, right: -14, zIndex: 10, background: "#8b2c2c", border: "none", borderRadius: "50%", width: 32, height: 32, color: "#fff", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>✕</button>
         <div style={{ borderRadius: 12, overflow: "hidden", aspectRatio: "1/1" }}>
           <WineThumb wine={wine} height="100%" />
         </div>
@@ -898,7 +901,7 @@ const Carousel = ({ items, onSelect, title, subtitle, accentColor = "#e8b4b4", a
             {/* Dots — fadeMode usa círculos sólidos, slide usa pill */}
             <div style={{ display: "flex", gap: fadeMode ? 7 : 6 }}>
               {Array.from({ length: dotCount }).map((_, i) => (
-                <button key={i} onClick={() => { if (!animating) setIndex(i); }}
+                <button key={i} onClick={() => { if (!animating) setIndex(i); }} aria-label={`Foto ${i + 1}`}
                   style={{
                     width: fadeMode ? 9 : (i === index ? 20 : 7),
                     height: fadeMode ? 9 : 7,
@@ -912,13 +915,13 @@ const Carousel = ({ items, onSelect, title, subtitle, accentColor = "#e8b4b4", a
               ))}
             </div>
             {/* Arrows */}
-            <button onClick={() => go("left")}
+            <button onClick={() => go("left")} aria-label="Foto anterior"
               style={{ width: 34, height: 34, borderRadius: "50%", border: `1px solid #2a1f1f`, background: "#1a1410", color: "#a09080", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = accentColor; e.currentTarget.style.color = accentColor; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2a1f1f"; e.currentTarget.style.color = "#a09080"; }}>
               ‹
             </button>
-            <button onClick={() => go("right")}
+            <button onClick={() => go("right")} aria-label="Próxima foto"
               style={{ width: 34, height: 34, borderRadius: "50%", border: `1px solid #2a1f1f`, background: "#1a1410", color: "#a09080", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = accentColor; e.currentTarget.style.color = accentColor; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = "#2a1f1f"; e.currentTarget.style.color = "#a09080"; }}>
@@ -1318,7 +1321,7 @@ const InfoSlider = () => {
   return (
     <div style={{ background: s.bg, borderTop: "1px solid rgba(255,255,255,.04)", borderBottom: "1px solid rgba(255,255,255,.04)", transition: "background .5s ease" }}>
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 44px", position: "relative", display: "flex", alignItems: "center", justifyContent: "center", height: 38 }}>
-        <button onClick={() => go((idx - 1 + INFO_SLIDES.length) % INFO_SLIDES.length)}
+        <button onClick={() => go((idx - 1 + INFO_SLIDES.length) % INFO_SLIDES.length)} aria-label="Slide anterior"
           style={{ position: "absolute", left: 8, background: "none", border: "none", color: "rgba(255,255,255,.2)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: "4px 8px", transition: "color .2s" }}
           onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,.6)"}
           onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.2)"}>‹</button>
@@ -1328,12 +1331,12 @@ const InfoSlider = () => {
           <span style={{ fontSize: 11, color: s.accent, letterSpacing: .3 }}>{s.text}</span>
           <div style={{ display: "flex", gap: 4, marginLeft: 8 }}>
             {INFO_SLIDES.map((_, i) => (
-              <button key={i} onClick={() => go(i)} style={{ width: i === idx ? 14 : 4, height: 4, borderRadius: 2, border: "none", background: i === idx ? s.accent : "rgba(255,255,255,.15)", cursor: "pointer", padding: 0, transition: "all .3s" }} />
+              <button key={i} onClick={() => go(i)} aria-label={`Slide ${i + 1}`} style={{ width: i === idx ? 14 : 4, height: 4, borderRadius: 2, border: "none", background: i === idx ? s.accent : "rgba(255,255,255,.15)", cursor: "pointer", padding: 0, transition: "all .3s" }} />
             ))}
           </div>
         </div>
 
-        <button onClick={() => go((idx + 1) % INFO_SLIDES.length)}
+        <button onClick={() => go((idx + 1) % INFO_SLIDES.length)} aria-label="Próximo slide"
           style={{ position: "absolute", right: 8, background: "none", border: "none", color: "rgba(255,255,255,.2)", cursor: "pointer", fontSize: 18, lineHeight: 1, padding: "4px 8px", transition: "color .2s" }}
           onMouseEnter={e => e.currentTarget.style.color = "rgba(255,255,255,.6)"}
           onMouseLeave={e => e.currentTarget.style.color = "rgba(255,255,255,.2)"}>›</button>
@@ -1410,7 +1413,7 @@ const ImageBannerCarousel = ({ banners }) => {
       {active.length > 1 && (
         <div style={{ position: "absolute", bottom: 14, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 7 }}>
           {active.map((_, i) => (
-            <button key={i} onClick={() => goTo(i)}
+            <button key={i} onClick={() => goTo(i)} aria-label={`Ir para banner ${i + 1}`}
               style={{ width: i === idx ? 24 : 8, height: 8, borderRadius: 4, border: "none", background: i === idx ? (b.accent || "#e8b4b4") : "rgba(255,255,255,.35)", cursor: "pointer", padding: 0, transition: "all .35s" }} />
           ))}
         </div>
@@ -1418,11 +1421,11 @@ const ImageBannerCarousel = ({ banners }) => {
       {/* Setas */}
       {active.length > 1 && (
         <>
-          <button onClick={() => goTo((idx - 1 + active.length) % active.length)}
+          <button onClick={() => goTo((idx - 1 + active.length) % active.length)} aria-label="Banner anterior"
             style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,.45)", border: "1px solid rgba(255,255,255,.15)", backdropFilter: "blur(4px)", borderRadius: "50%", width: 36, height: 36, color: "#f5f0e8", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
             onMouseEnter={e => e.currentTarget.style.background = "rgba(139,44,44,.7)"}
             onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,.45)"}>‹</button>
-          <button onClick={() => goTo((idx + 1) % active.length)}
+          <button onClick={() => goTo((idx + 1) % active.length)} aria-label="Próximo banner"
             style={{ position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,.45)", border: "1px solid rgba(255,255,255,.15)", backdropFilter: "blur(4px)", borderRadius: "50%", width: 36, height: 36, color: "#f5f0e8", cursor: "pointer", fontSize: 16, display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s" }}
             onMouseEnter={e => e.currentTarget.style.background = "rgba(139,44,44,.7)"}
             onMouseLeave={e => e.currentTarget.style.background = "rgba(0,0,0,.45)"}>›</button>
@@ -1573,7 +1576,7 @@ const ClientAccountPanel = (props) => {
         {/* ── TELA DE LOGIN ── */}
         {authMode === "login" && (
           <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", padding: "32px 28px" }}>
-            <button onClick={onClose} style={{ position: "absolute", top: 18, right: 18, background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 18 }}>✕</button>
+            <button onClick={onClose} aria-label="Fechar" style={{ position: "absolute", top: 18, right: 18, background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 18 }}>✕</button>
             <div style={{ textAlign: "center", marginBottom: 32 }}>
               <img src={LOGO_URI} alt="Vinhos9" style={{ height: 72, width: "auto", margin: "0 auto 10px", display: "block" }} />
               <div style={{ fontSize: 9, letterSpacing: 4, color: "#8b6060", textTransform: "uppercase", marginBottom: 6 }}>Vinhos9</div>
@@ -1592,7 +1595,7 @@ const ClientAccountPanel = (props) => {
               <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>Senha</label>
               <div style={{ position: "relative" }}>
                 <input type={showPwd ? "text" : "password"} value={loginPwd} onChange={e => setLoginPwd(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} placeholder="••••••••" style={{ ...inputStyle, paddingRight: 42 }} />
-                <button onClick={() => setShowPwd(!showPwd)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 13 }}>{showPwd ? "🙈" : "👁"}</button>
+                <button onClick={() => setShowPwd(!showPwd)} aria-label="Mostrar ou ocultar senha" style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 13 }}>{showPwd ? "🙈" : "👁"}</button>
               </div>
             </div>
             {authError && (
@@ -1622,12 +1625,12 @@ const ClientAccountPanel = (props) => {
         {authMode === "register" && (
           <div style={{ flex: 1, padding: "28px 28px 36px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 26 }}>
-              <button onClick={() => { setAuthMode("login"); setAuthError(""); }} style={{ background: "none", border: "none", color: "#7a6a6a", cursor: "pointer", fontSize: 18 }}>←</button>
+              <button onClick={() => { setAuthMode("login"); setAuthError(""); }} aria-label="Voltar ao login" style={{ background: "none", border: "none", color: "#7a6a6a", cursor: "pointer", fontSize: 18 }}>←</button>
               <div>
                 <h2 style={{ fontSize: 19, color: "#e8b4b4" }}>Criar Conta</h2>
                 <p style={{ fontSize: 11, color: "#5a4a4a", marginTop: 2 }}>Cadastre-se e acompanhe seus pedidos</p>
               </div>
-              <button onClick={onClose} style={{ marginLeft: "auto", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 18 }}>✕</button>
+              <button onClick={onClose} aria-label="Fechar" style={{ marginLeft: "auto", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 18 }}>✕</button>
             </div>
 
             {/* Campos básicos */}
@@ -1687,7 +1690,7 @@ const ClientAccountPanel = (props) => {
                   onChange={e => setRegPwd(e.target.value)} placeholder="••••••••"
                   style={{ ...inputStyle, paddingRight: 42,
                     borderColor: regPwd.length > 0 ? pwdColors[pwdScore] : "#2a1f1f" }} />
-                <button onClick={() => setShowPwd(!showPwd)} style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 13 }}>{showPwd ? "🙈" : "👁"}</button>
+                <button onClick={() => setShowPwd(!showPwd)} aria-label="Mostrar ou ocultar senha" style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 13 }}>{showPwd ? "🙈" : "👁"}</button>
               </div>
 
               {/* 26: Barra de força */}
@@ -2033,12 +2036,12 @@ const HomeCarousel = ({ items, title, subtitle, accentColor, badge, onSelect, ad
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <div style={{ display: "flex", gap: 5 }}>
               {Array.from({ length: dotCount }).map((_, i) => (
-                <button key={i} onClick={() => { if (!animating) setIdx(i); }}
+                <button key={i} onClick={() => { if (!animating) setIdx(i); }} aria-label={`Produto ${i + 1}`}
                   style={{ width: i === idx ? 18 : 6, height: 6, borderRadius: 3, border: "none", background: i === idx ? accentColor : "#2a1f1f", cursor: "pointer", transition: "all .3s", padding: 0 }} />
               ))}
             </div>
-            <button onClick={() => go("l")} style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid #2a1f1f", background: "#1a1410", color: "#a09080", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
-            <button onClick={() => go("r")} style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid #2a1f1f", background: "#1a1410", color: "#a09080", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>›</button>
+            <button onClick={() => go("l")} aria-label="Produto anterior" style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid #2a1f1f", background: "#1a1410", color: "#a09080", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>‹</button>
+            <button onClick={() => go("r")} aria-label="Próximo produto" style={{ width: 32, height: 32, borderRadius: "50%", border: "1px solid #2a1f1f", background: "#1a1410", color: "#a09080", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>›</button>
           </div>
         )}
       </div>
@@ -2461,7 +2464,7 @@ using (bucket_id = 'wines');`;
           <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>Publishable Key</label>
           <div style={{ position: "relative" }}>
             <input type={showKey ? "text" : "password"} value={inputKey} onChange={e => setInputKey(e.target.value)} placeholder="sb_publishable_…" style={{ ...inputStyle, paddingRight: 40 }} />
-            <button onClick={() => setShowKey(p => !p)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 13 }}>{showKey ? "🙈" : "👁"}</button>
+            <button onClick={() => setShowKey(p => !p)} aria-label="Mostrar ou ocultar chave" style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 13 }}>{showKey ? "🙈" : "👁"}</button>
           </div>
         </div>
         <div style={{ display: "flex", gap: 10 }}>
@@ -3295,7 +3298,7 @@ const SegurancaPanel = ({ showToast, maintenanceCfg = {}, saveMaintenance = () =
           <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5 }}>Nova Senha</label>
           <div style={{ position: "relative" }}>
             <input type={showNewPass ? "text" : "password"} value={newPass} onChange={e => setNewPass(e.target.value)} placeholder="Mínimo 8 caracteres" style={{ ...inputStyle, paddingRight: 40 }} />
-            <button onClick={() => setShowNewPass(p => !p)} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 13 }}>{showNewPass ? "🙈" : "👁"}</button>
+            <button onClick={() => setShowNewPass(p => !p)} aria-label="Mostrar ou ocultar senha" style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 13 }}>{showNewPass ? "🙈" : "👁"}</button>
           </div>
           {strength && (
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
@@ -4570,11 +4573,11 @@ self.addEventListener("fetch", e => {
             <div style={{ fontSize: 12, color: "#a09080", lineHeight: 1.5 }}>Adicione à tela inicial e acesse como app</div>
           </div>
           <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-            <button onClick={handlePwaInstall}
+            <button onClick={handlePwaInstall} aria-label="Instalar aplicativo Vinhos9"
               style={{ padding: "9px 18px", background: "#8b2c2c", border: "none", borderRadius: 6, color: "#fff", cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif", fontWeight: "bold" }}>
               Instalar
             </button>
-            <button onClick={() => setPwaPrompt(null)}
+            <button onClick={() => setPwaPrompt(null)} aria-label="Fechar convite de instalação"
               style={{ padding: "9px 14px", background: "none", border: "1px solid #2a1f1f", borderRadius: 6, color: "#7a6a6a", cursor: "pointer", fontSize: 13, fontFamily: "Georgia,serif" }}>
               Agora não
             </button>
@@ -4603,7 +4606,7 @@ self.addEventListener("fetch", e => {
           <span className="nav-link" onClick={() => openClientPanel("orders")} style={{ color: "#a09090", display: "flex", alignItems: "center", gap: 4 }}>👤 Conta</span>
           <span className="nav-link" onClick={() => setPage("admin")} style={{ color: page === "admin" ? "#e8b4b4" : "#a09090" }}>ADM</span>
           {page === "store" && (
-            <button className="btn-red" onClick={() => setCartOpen(true)} style={{ padding: "7px 14px", borderRadius: 4, fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
+            <button className="btn-red" onClick={() => setCartOpen(true)} aria-label="Abrir carrinho" style={{ padding: "7px 14px", borderRadius: 4, fontSize: 12, display: "flex", alignItems: "center", gap: 5 }}>
               🛒 {cartCount > 0 && <span style={{ background: "#e8b4b4", color: "#1a0a0a", borderRadius: "50%", width: 17, height: 17, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: "bold" }}>{cartCount}</span>}
             </button>
           )}
@@ -4611,11 +4614,11 @@ self.addEventListener("fetch", e => {
         {/* Mobile: cart + hamburger */}
         <div className="mobile-nav" style={{ display: "none", alignItems: "center", gap: 10 }}>
           {page === "store" && (
-            <button className="btn-red" onClick={() => setCartOpen(true)} style={{ padding: "7px 12px", borderRadius: 4, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>
+            <button className="btn-red" onClick={() => setCartOpen(true)} aria-label="Abrir carrinho" style={{ padding: "7px 12px", borderRadius: 4, fontSize: 12, display: "flex", alignItems: "center", gap: 4 }}>
               🛒 {cartCount > 0 && <span style={{ background: "#e8b4b4", color: "#1a0a0a", borderRadius: "50%", width: 16, height: 16, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: "bold" }}>{cartCount}</span>}
             </button>
           )}
-          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{ background: "none", border: "1px solid #2a1f1f", borderRadius: 6, color: "#e8b4b4", cursor: "pointer", padding: "6px 10px", fontSize: 16, fontFamily: "Georgia,serif" }}>
+          <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Menu" aria-expanded={mobileMenuOpen} style={{ background: "none", border: "1px solid #2a1f1f", borderRadius: 6, color: "#e8b4b4", cursor: "pointer", padding: "6px 10px", fontSize: 16, fontFamily: "Georgia,serif" }}>
             {mobileMenuOpen ? "✕" : "☰"}
           </button>
         </div>
@@ -4645,7 +4648,7 @@ self.addEventListener("fetch", e => {
 
       {/* ── LOJA ── */}
       {page === "store" && !selectedWine && (
-        <main style={{ animation: "fadeIn .4s ease" }}>
+        <main role="main" style={{ animation: "fadeIn .4s ease" }}>
 
           {/* Carrossel de Banners */}
           <ImageBannerCarousel banners={banners} />
@@ -4807,7 +4810,7 @@ self.addEventListener("fetch", e => {
                 )}
               </div>
               <div className="cat-btns" style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
-                {CATEGORIES.map((c) => <button key={c} onClick={() => setFilter(c)} style={{ padding: "6px 13px", borderRadius: 4, border: `1px solid ${filter === c ? "#8b2c2c" : "#2a1f1f"}`, background: filter === c ? "#8b2c2c" : "transparent", color: filter === c ? "#fff" : "#a09080", cursor: "pointer", fontSize: 11, letterSpacing: 1, fontFamily: "Georgia,serif", transition: "all .2s" }}>{c}</button>)}
+                {CATEGORIES.map((c) => <button key={c} aria-pressed={filter === c} onClick={() => setFilter(c)} style={{ padding: "6px 13px", borderRadius: 4, border: `1px solid ${filter === c ? "#8b2c2c" : "#2a1f1f"}`, background: filter === c ? "#8b2c2c" : "transparent", color: filter === c ? "#fff" : "#a09080", cursor: "pointer", fontSize: 11, letterSpacing: 1, fontFamily: "Georgia,serif", transition: "all .2s" }}>{c}</button>)}
               </div>
               {/* Filtro por País — dinâmico baseado nos vinhos cadastrados */}
               {(() => {
@@ -4868,7 +4871,7 @@ self.addEventListener("fetch", e => {
                       {wine.promoPrice && <span style={{ position: "absolute", top: 10, left: 10, background: "#b45309", color: "#fef3c7", fontSize: 9, padding: "2px 8px", borderRadius: 3, fontWeight: "bold", letterSpacing: 1 }}>-{discountPct(wine.price, wine.promoPrice)}%</span>}
                       <span style={{ position: "absolute", top: 10, right: 10, background: "#8b2c2c", color: "#fff", fontSize: 9, padding: "2px 7px", borderRadius: 3 }}>{wine.category}</span>
                       {/* ❤️ Wishlist button */}
-                      <button onClick={(e) => toggleWishlist(e, wine.id)}
+                      <button onClick={(e) => toggleWishlist(e, wine.id)} aria-label="Adicionar aos favoritos"
                         style={{ position: "absolute", bottom: 10, right: 10, background: isWishlisted ? "rgba(139,44,44,.9)" : "rgba(20,14,14,.7)", border: `1px solid ${isWishlisted ? "#8b2c2c" : "rgba(255,255,255,.1)"}`, borderRadius: "50%", width: 30, height: 30, cursor: "pointer", fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", transition: "all .2s", color: isWishlisted ? "#fff" : "#a09080" }}>
                         {isWishlisted ? "❤️" : "🤍"}
                       </button>
@@ -4893,7 +4896,7 @@ self.addEventListener("fetch", e => {
                         </div>
                       )}
                       <div className="wc-stock" style={{ fontSize: 9, color: "#5a4a4a", marginBottom: 12 }}>{wine.stock > 0 ? `${wine.stock} em estoque` : ""}</div>
-                      <button className="btn-red" onClick={(e) => { e.stopPropagation(); addToCart(wine); }} disabled={wine.stock === 0}
+                      <button className="btn-red" onClick={(e) => { e.stopPropagation(); addToCart(wine); }} disabled={wine.stock === 0} aria-label={`Adicionar ${wine.name} ao carrinho`}
                         style={{ width: "100%", padding: "10px", borderRadius: 4, fontSize: 11, letterSpacing: 1, background: wine.stock === 0 ? "#2a1f1f" : "#8b2c2c", color: wine.stock === 0 ? "#5a4a4a" : "#fff", cursor: wine.stock === 0 ? "not-allowed" : "pointer", marginTop: "auto" }}>
                         {wine.stock === 0 ? "Esgotado" : "🛒 Adicionar ao Carrinho"}
                       </button>
@@ -5033,7 +5036,7 @@ self.addEventListener("fetch", e => {
                     {selectedWine.stock === 0 ? "Esgotado" : "🛒 Adicionar ao Carrinho"}
                   </button>
                   {/* Favorito */}
-                  <button onClick={(e) => toggleWishlist(e, selectedWine.id)}
+                  <button onClick={(e) => toggleWishlist(e, selectedWine.id)} aria-label="Adicionar aos favoritos"
                     style={{ padding: "13px 18px", borderRadius: 4, border: `1px solid ${wishlist.includes(selectedWine.id) ? "#8b2c2c" : "#2a1f1f"}`, background: wishlist.includes(selectedWine.id) ? "rgba(139,44,44,.2)" : "#1a1410", color: wishlist.includes(selectedWine.id) ? "#e8b4b4" : "#7a6a6a", cursor: "pointer", fontSize: 18, display: "flex", alignItems: "center", transition: "all .2s" }}
                     title={wishlist.includes(selectedWine.id) ? "Remover dos favoritos" : "Adicionar aos favoritos"}>
                     {wishlist.includes(selectedWine.id) ? "❤️" : "🤍"}
@@ -5287,12 +5290,12 @@ self.addEventListener("fetch", e => {
 
       {/* ── CARRINHO ── */}
       {cartOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 200 }}>
+        <div role="dialog" aria-modal="true" aria-label="Carrinho de compras" style={{ position: "fixed", inset: 0, zIndex: 200 }}>
           <div onClick={() => setCartOpen(false)} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.72)", backdropFilter: "blur(4px)" }} />
           <div className="cart-panel" style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 390, background: "#140e0e", borderLeft: "1px solid #2a1f1f", animation: "slideIn .3s ease", display: "flex", flexDirection: "column" }}>
             <div style={{ padding: "18px 22px 14px", borderBottom: "1px solid #2a1f1f", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <h2 style={{ fontSize: 15, letterSpacing: 2 }}>🛒 Carrinho ({cartCount})</h2>
-              <button onClick={() => setCartOpen(false)} style={{ background: "none", border: "none", color: "#a09080", cursor: "pointer", fontSize: 17 }}>✕</button>
+              <button onClick={() => setCartOpen(false)} aria-label="Fechar carrinho" style={{ background: "none", border: "none", color: "#a09080", cursor: "pointer", fontSize: 17 }}>✕</button>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: 18 }}>
               {cart.length === 0 ? (
@@ -5307,9 +5310,9 @@ self.addEventListener("fetch", e => {
                     <div style={{ fontSize: 12, fontWeight: "bold", marginBottom: 2 }}>{item.name}</div>
                     {item.promoPrice && <div style={{ marginBottom: 4 }}><PromoTimer wineId={item.id} compact /></div>}
                     <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4 }}>
-                      <button onClick={() => updateCartQty(item.id, -1)} style={{ width: 22, height: 22, background: "#2a1f1f", border: "none", borderRadius: 3, color: "#e8b4b4", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
+                      <button onClick={() => updateCartQty(item.id, -1)} aria-label="Diminuir quantidade" style={{ width: 22, height: 22, background: "#2a1f1f", border: "none", borderRadius: 3, color: "#e8b4b4", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>−</button>
                       <span style={{ fontSize: 12, color: "#f5f0e8", minWidth: 18, textAlign: "center" }}>{item.qty}</span>
-                      <button onClick={() => updateCartQty(item.id, 1)} style={{ width: 22, height: 22, background: "#2a1f1f", border: "none", borderRadius: 3, color: "#e8b4b4", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
+                      <button onClick={() => updateCartQty(item.id, 1)} aria-label="Aumentar quantidade" style={{ width: 22, height: 22, background: "#2a1f1f", border: "none", borderRadius: 3, color: "#e8b4b4", cursor: "pointer", fontSize: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>+</button>
                       <span style={{ fontSize: 10, color: item.promoPrice ? "#fbbf24" : "#8b6060", marginLeft: 4 }}>{fmt(item.promoPrice || item.price)} × {item.qty}</span>
                     </div>
                   </div>
@@ -5348,7 +5351,7 @@ self.addEventListener("fetch", e => {
                 ) : (
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10, padding: "7px 11px", background: "rgba(74,222,128,.07)", border: "1px solid rgba(74,222,128,.2)", borderRadius: 6 }}>
                     <span style={{ fontSize: 11, color: "#4ade80" }}>🎁 {appliedCoupon} −{couponPct(appliedCoupon)}%</span>
-                    <button onClick={() => { setAppliedCoupon(null); setCouponInput(""); }} style={{ background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 10 }}>✕</button>
+                    <button onClick={() => { setAppliedCoupon(null); setCouponInput(""); }} aria-label="Remover cupom" style={{ background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 10 }}>✕</button>
                   </div>
                 )}
 
@@ -5384,7 +5387,7 @@ self.addEventListener("fetch", e => {
 
       {/* ── SOBRE ── */}
       {page === "about" && (
-        <main style={{ animation: "fadeIn .4s ease", maxWidth: 860, margin: "0 auto", padding: "52px 24px 80px" }}>
+        <main role="main" style={{ animation: "fadeIn .4s ease", maxWidth: 860, margin: "0 auto", padding: "52px 24px 80px" }}>
           {/* Hero */}
           <div style={{ textAlign: "center", marginBottom: 60 }}>
             <div style={{ fontSize: 10, letterSpacing: 5, color: "#8b6060", textTransform: "uppercase", marginBottom: 10 }}>Nossa História</div>
@@ -5452,7 +5455,7 @@ self.addEventListener("fetch", e => {
 
       {/* ── CHECKOUT ── */}
       {checkoutOpen && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
+        <div role="dialog" aria-modal="true" aria-label="Finalizar compra" style={{ position: "fixed", inset: 0, zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}>
           <div onClick={() => { if (checkoutStep !== 3) setCheckoutOpen(false); }} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.82)", backdropFilter: "blur(5px)" }} />
           <div style={{ position: "relative", background: "#140e0e", border: "1px solid #2a1f1f", borderRadius: 16, padding: "28px 28px 24px", width: "100%", maxWidth: 500, maxHeight: "92vh", overflowY: "auto", animation: "slideUp .3s ease" }}>
 
@@ -5461,7 +5464,7 @@ self.addEventListener("fetch", e => {
               <>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <h2 style={{ fontSize: 17, color: "#e8b4b4", letterSpacing: 1 }}>🧾 Finalizar Pedido</h2>
-                  <button onClick={() => setCheckoutOpen(false)} style={{ background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 18 }}>✕</button>
+                  <button onClick={() => setCheckoutOpen(false)} aria-label="Fechar checkout" style={{ background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 18 }}>✕</button>
                 </div>
                 <p style={{ fontSize: 10, color: "#5a4a4a", letterSpacing: 2, textTransform: "uppercase", marginBottom: 22 }}>Passo 1 de 2 · Seus Dados</p>
 
@@ -5597,7 +5600,7 @@ self.addEventListener("fetch", e => {
               <>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                   <h2 style={{ fontSize: 17, color: "#e8b4b4", letterSpacing: 1 }}>✅ Confirmar Pedido</h2>
-                  <button onClick={() => setCheckoutOpen(false)} style={{ background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 18 }}>✕</button>
+                  <button onClick={() => setCheckoutOpen(false)} aria-label="Fechar checkout" style={{ background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 18 }}>✕</button>
                 </div>
                 <p style={{ fontSize: 10, color: "#5a4a4a", letterSpacing: 2, textTransform: "uppercase", marginBottom: 22 }}>Passo 2 de 2 · Revisão</p>
                 <div style={{ display: "flex", gap: 6, marginBottom: 24 }}>
@@ -5780,7 +5783,7 @@ self.addEventListener("fetch", e => {
               <label style={{ display: "block", fontSize: 9, letterSpacing: 2, color: "#5a4a4a", textTransform: "uppercase", marginBottom: 5, textAlign: "left" }}>Senha</label>
               <div style={{ position: "relative" }}>
                 <input type={showPass ? "text" : "password"} value={loginPass} onChange={(e) => setLoginPass(e.target.value)} onKeyDown={(e) => e.key === "Enter" && handleLogin()} placeholder="••••••••" style={{ width: "100%", background: "#0c0a09", border: "1px solid #2a1f1f", borderRadius: 4, padding: "11px 38px 11px 13px", color: "#f5f0e8", fontSize: 13, fontFamily: "Georgia,serif" }} />
-                <button onClick={() => setShowPass(!showPass)} style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 13 }}>{showPass ? "🙈" : "👁"}</button>
+                <button onClick={() => setShowPass(!showPass)} aria-label="Mostrar ou ocultar senha" style={{ position: "absolute", right: 11, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 13 }}>{showPass ? "🙈" : "👁"}</button>
               </div>
             </div>
             {loginError && <p style={{ color: "#ef4444", fontSize: 11, marginBottom: 10, textAlign: "left" }}>⚠ {loginError}</p>}
@@ -5975,9 +5978,9 @@ self.addEventListener("fetch", e => {
                             Página {page} de {totalPages} · {wines.length} vinhos
                           </span>
                           <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                            <button onClick={() => setAdmWinePage(1)} disabled={page === 1}
+                            <button onClick={() => setAdmWinePage(1)} aria-label="Primeira página" disabled={page === 1}
                               style={{ padding: "5px 10px", background: "none", border: "1px solid #2a1f1f", borderRadius: 4, color: page === 1 ? "#3a2a2a" : "#a09080", cursor: page === 1 ? "default" : "pointer", fontSize: 12, fontFamily: "Georgia,serif" }}>«</button>
-                            <button onClick={() => setAdmWinePage(p => Math.max(1, p - 1))} disabled={page === 1}
+                            <button onClick={() => setAdmWinePage(p => Math.max(1, p - 1))} aria-label="Página anterior" disabled={page === 1}
                               style={{ padding: "5px 12px", background: "none", border: "1px solid #2a1f1f", borderRadius: 4, color: page === 1 ? "#3a2a2a" : "#a09080", cursor: page === 1 ? "default" : "pointer", fontSize: 12, fontFamily: "Georgia,serif" }}>‹ Anterior</button>
                             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                               const start = Math.max(1, Math.min(page - 2, totalPages - 4));
@@ -5988,9 +5991,9 @@ self.addEventListener("fetch", e => {
                                   style={{ padding: "5px 10px", background: n === page ? "#8b2c2c" : "none", border: `1px solid ${n === page ? "#8b2c2c" : "#2a1f1f"}`, borderRadius: 4, color: n === page ? "#fff" : "#a09080", cursor: "pointer", fontSize: 12, fontFamily: "Georgia,serif", minWidth: 34 }}>{n}</button>
                               );
                             })}
-                            <button onClick={() => setAdmWinePage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
+                            <button onClick={() => setAdmWinePage(p => Math.min(totalPages, p + 1))} aria-label="Próxima página" disabled={page === totalPages}
                               style={{ padding: "5px 12px", background: "none", border: "1px solid #2a1f1f", borderRadius: 4, color: page === totalPages ? "#3a2a2a" : "#a09080", cursor: page === totalPages ? "default" : "pointer", fontSize: 12, fontFamily: "Georgia,serif" }}>Próxima ›</button>
-                            <button onClick={() => setAdmWinePage(totalPages)} disabled={page === totalPages}
+                            <button onClick={() => setAdmWinePage(totalPages)} aria-label="Última página" disabled={page === totalPages}
                               style={{ padding: "5px 10px", background: "none", border: "1px solid #2a1f1f", borderRadius: 4, color: page === totalPages ? "#3a2a2a" : "#a09080", cursor: page === totalPages ? "default" : "pointer", fontSize: 12, fontFamily: "Georgia,serif" }}>»</button>
                           </div>
                         </div>
@@ -6362,7 +6365,7 @@ self.addEventListener("fetch", e => {
           <div style={{ position: "relative", background: "#1a1410", border: "1px solid #2a1f1f", borderRadius: 14, padding: "26px 26px 22px", width: "100%", maxWidth: 560, maxHeight: "90vh", overflowY: "auto", animation: "slideUp .3s ease" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
               <h2 style={{ fontSize: 16, color: "#e8b4b4" }}>✏️ Editar Vinho</h2>
-              <button onClick={() => setEditWine(null)} style={{ background: "none", border: "none", color: "#a09080", cursor: "pointer", fontSize: 17 }}>✕</button>
+              <button onClick={() => setEditWine(null)} aria-label="Fechar edição" style={{ background: "none", border: "none", color: "#a09080", cursor: "pointer", fontSize: 17 }}>✕</button>
             </div>
             {renderFormFields(editWine, setEditWine, editImgRef)}
             <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
@@ -6408,7 +6411,7 @@ self.addEventListener("fetch", e => {
       {showWelcomePopup && !welcomeDismissed && (
         <div style={{ position: "fixed", inset: 0, zIndex: 600, display: "flex", alignItems: "flex-end", justifyContent: "center", paddingBottom: 32, pointerEvents: "none" }}>
           <div style={{ pointerEvents: "auto", background: "linear-gradient(145deg,#1a1410,#120e0c)", border: "1px solid #8b2c2c", borderRadius: 14, padding: "22px 26px", maxWidth: 380, width: "90vw", animation: "slideUp .4s ease", boxShadow: "0 20px 60px rgba(0,0,0,.7)", position: "relative" }}>
-            <button onClick={() => { setShowWelcomePopup(false); setWelcomeDismissed(true); }} style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 14 }}>✕</button>
+            <button onClick={() => { setShowWelcomePopup(false); setWelcomeDismissed(true); }} aria-label="Fechar popup" style={{ position: "absolute", top: 12, right: 12, background: "none", border: "none", color: "#5a4a4a", cursor: "pointer", fontSize: 14 }}>✕</button>
             <div style={{ fontSize: 28, marginBottom: 10 }}>🎉</div>
             <div style={{ fontSize: 14, color: "#e8b4b4", fontWeight: "bold", marginBottom: 6 }}>Bem-vindo à Vinhos9!</div>
             <p style={{ fontSize: 12, color: "#a09080", lineHeight: 1.7, marginBottom: 14 }}>
@@ -6458,7 +6461,7 @@ self.addEventListener("fetch", e => {
               </p>
               <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
                 {pwaPrompt ? (
-                  <button onClick={handlePwaInstall}
+                  <button onClick={handlePwaInstall} aria-label="Instalar aplicativo Vinhos9"
                     style={{ padding: "12px 32px", background: "linear-gradient(135deg,#8b2c2c,#c04040)", border: "none", borderRadius: 8, color: "#fff", cursor: "pointer", fontSize: 15, fontFamily: "Georgia,serif", fontWeight: "bold", letterSpacing: 1, boxShadow: "0 4px 20px rgba(139,44,44,.5)" }}>
                     📲 Instalar agora — grátis
                   </button>
