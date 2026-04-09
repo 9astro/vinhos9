@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bordeaux: #6B1228;
+    --gold: #C9A84C;
+    --graphite: #1a1a21;
+  }
+
+  * { box-sizing: border-box; }
+
+  ::selection {
+    background: rgba(201, 168, 76, 0.3);
+    color: #faf8f5;
+  }
+
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #1a1a21; }
+  ::-webkit-scrollbar-thumb { background: #4d4d58; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #C9A84C; }
+
+  html { scroll-behavior: smooth; }
+  body { min-height: 100dvh; }
+
+  h1, h2, h3, h4, h5 { font-family: var(--font-playfair); }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-bordeaux-800 hover:bg-bordeaux-700 text-off-white font-sans font-semibold tracking-wide rounded-lg transition-all duration-200 hover:shadow-premium active:scale-95;
+  }
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-gold-500 hover:bg-gold-400 text-graphite-950 font-sans font-semibold tracking-wide rounded-lg transition-all duration-200 hover:shadow-gold active:scale-95;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 border border-graphite-700 hover:border-gold-500 text-off-white hover:text-gold-400 font-sans font-semibold tracking-wide rounded-lg transition-all duration-200 active:scale-95;
+  }
+  .card-wine {
+    @apply bg-graphite-900 rounded-xl overflow-hidden border border-graphite-800 hover:border-gold-500/30 transition-all duration-300 hover:shadow-premium cursor-pointer;
+  }
+  .input-field {
+    @apply w-full bg-graphite-900 border border-graphite-700 focus:border-gold-500 text-off-white placeholder-graphite-500 rounded-lg px-4 py-3 outline-none transition-colors duration-200 font-sans text-sm;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold font-sans uppercase tracking-wider;
+  }
+  .section-title {
+    @apply font-serif text-2xl sm:text-3xl font-bold text-off-white;
+  }
+  .gold-divider {
+    @apply h-px w-12 bg-gradient-to-r from-transparent via-gold-500 to-transparent mx-auto my-3;
+  }
+}
+
+@layer utilities {
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #9a7820, #C9A84C, #e8c050);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .text-gradient-bordeaux {
+    background: linear-gradient(135deg, #ac2042, #8B1A35, #6B1228);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .glass {
+    background: rgba(26, 26, 33, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  .wine-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+}
